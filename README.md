@@ -147,6 +147,15 @@ cd client
 npm run dev  # Vite dev server with hot reload
 ```
 
+### Running Tests
+```bash
+cd server
+npm test              # Run all tests once
+npm run test:watch    # Run tests in watch mode
+```
+
+See [server/test/README.md](server/test/README.md) for detailed test documentation.
+
 ### Production Build
 ```bash
 # Build client

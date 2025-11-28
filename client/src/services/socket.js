@@ -141,5 +141,8 @@ class SocketService {
   }
 }
 
+// Export class for testing
+export { SocketService };
+
 // Singleton instance
 export const socketService = new SocketService();
