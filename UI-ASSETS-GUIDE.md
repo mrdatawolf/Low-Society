@@ -39,9 +39,11 @@ This document explains how the UI is structured for easy asset replacement. All 
 - Easy to replace with: Card sprite sheets or individual images
 
 **Avatars:**
-- Colored circles with initials
-- CSS `background-color` and text
-- Easy to replace with: Avatar image library or user uploads
+- ✅ **IMPLEMENTED**: Low Society themed SVG icons (10 unique designs)
+- Includes: Beer Can, Trailer, Food Stamp, Cigarette Pack, Bowling Pin, TV Dinner, Lawn Chair, Lottery Ticket, Pickup Truck, Six Pack
+- Random assignment per player based on player ID (consistent across sessions)
+- Colored circle backgrounds with themed icons
+- Easy to replace with: Custom avatar images or user uploads
 
 **Money/Food Stamps:**
 - Green rectangles with $ text
@@ -62,15 +64,18 @@ client/src/
 ├── components/           # React components (logic only)
 │   ├── HomeScreen.jsx
 │   ├── GameScreen.jsx
-│   └── ui/              # Reusable UI components (future)
-│       ├── Card.jsx     # (future Phase 3)
-│       ├── Avatar.jsx   # (future Phase 2)
-│       └── Table.jsx    # (future Phase 2)
+│   └── ui/              # Reusable UI components
+│       ├── Card.jsx     # ✅ COMPLETED
+│       ├── PlayerAvatar.jsx   # ✅ COMPLETED (Phase 2)
+│       ├── AvatarIcons.jsx    # ✅ COMPLETED (Phase 2)
+│       └── PokerTable.jsx     # ✅ COMPLETED (Phase 2)
 ├── styles/              # CSS styling (placeholder visuals)
 │   ├── App.css          # Global styles & CSS variables
 │   ├── HomeScreen.css   # Landing page animations
-│   ├── PokerTable.css   # (future Phase 2)
-│   └── CardAnimations.css # (future Phase 3)
+│   ├── PokerTable.css   # ✅ COMPLETED (Phase 2)
+│   ├── PlayerAvatar.css # ✅ COMPLETED (Phase 2)
+│   ├── Card.css         # ✅ COMPLETED (Phase 3)
+│   └── CardAnimations.css # (future enhancements)
 └── assets/              # Real assets (FUTURE - not created yet)
     ├── backgrounds/
     │   ├── landing.jpg
@@ -136,33 +141,35 @@ const theme = useTheme(); // 'classic', 'dark-mode', or 'user-custom'
 - [x] Colors: CSS variables in `:root`
 - [x] Layout: Component structure independent of visuals
 
-### 🔜 Phase 2: Poker Table (NEXT)
-- [ ] Table: CSS shape → Replace with table image
-- [ ] Seats: Positioned divs → Works with any avatar style
-- [ ] Avatars: Colored circles → Replace with image set
-- [ ] Create `Avatar.jsx` component that accepts:
-  - `avatarUrl` prop (optional, defaults to colored circle)
-  - `playerName` prop (for initials fallback)
-  - `color` prop (for placeholder color)
+### ✅ Phase 2: Poker Table (COMPLETED)
+- [x] Table: CSS gradient oval with center area for cards
+- [x] Seats: Positioned divs that work with any avatar style (3-5 players)
+- [x] Avatars: **Low Society themed SVG icons** (10 unique designs)
+- [x] Created `PlayerAvatar.jsx` component with full feature set:
+  - `avatarUrl` prop (optional, uses themed icons as default)
+  - `playerName` prop (for display)
+  - `playerId` prop (for consistent random avatar selection)
+  - `color` prop (auto-generated background colors)
+  - Status indicators (active, passed, turn)
+  - Join/leave animations
+  - Stats display (money, cards, bid)
 
-**Example Avatar Component:**
-```jsx
-function Avatar({ avatarUrl, playerName, color, size = 80 }) {
-  return (
-    <div
-      className="avatar"
-      style={{
-        backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-        backgroundColor: !avatarUrl ? color : 'transparent',
-        width: size,
-        height: size
-      }}
-    >
-      {!avatarUrl && playerName.substring(0, 2)}
-    </div>
-  );
-}
-```
+**Implemented Avatar Icons (AvatarIcons.jsx):**
+- 🍺 Beer Can - Golden beverage can with PBR label
+- 🏠 Trailer - Classic mobile home with wheels
+- 💵 Food Stamp - Green government assistance card
+- 🚬 Cigarette Pack - Classic cigarette packaging
+- 🎳 Bowling Pin - White pin with red stripes
+- 📺 TV Dinner - Aluminum tray with compartments
+- 🪑 Lawn Chair - Colorful striped folding chair
+- 🎟️ Lottery Ticket - Gold scratch-off ticket
+- 🚚 Pickup Truck - Rusty old pickup with bed
+- 📦 Six Pack - Cardboard carrier with beer cans
+
+**Random Assignment System:**
+- Each player gets a themed icon based on their player ID hash
+- Consistent assignment (same player ID = same avatar)
+- 10 unique avatars ensure variety in multiplayer games
 
 ### 🔜 Phase 3: Card Animations (FUTURE)
 - [ ] Cards: Create `Card.jsx` component that accepts:
@@ -413,6 +420,9 @@ function AssetManager() {
 
 ---
 
-**Last Updated**: December 4, 2025
-**Status**: Phase 1 complete with placeholder graphics
-**Next Phase**: Poker table with modular avatar system
+**Last Updated**: December 5, 2025
+**Status**: Phase 1 & 2 complete with themed placeholder graphics
+**Completed Phases**:
+- ✅ Phase 1: Landing Page Enhancement (animated backgrounds, entrance animations)
+- ✅ Phase 2: Poker Table & Avatar System (themed SVG icons, positioned players, status indicators)
+**Next Phase**: Phase 3 - Card Animations (card reveal, collection, swap, discard)

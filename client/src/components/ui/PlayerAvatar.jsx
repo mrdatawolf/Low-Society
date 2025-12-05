@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AvatarIcon, getRandomAvatarIcon } from './AvatarIcons';
 import '../../styles/PlayerAvatar.css';
 
 /**
@@ -98,16 +99,16 @@ export function PlayerAvatar({
           width: `${size}px`,
           height: `${size}px`,
           backgroundImage: avatarUrl ? `url(${avatarUrl})` : 'none',
-          backgroundColor: !avatarUrl ? avatarColor : 'transparent',
+          backgroundColor: !avatarUrl ? avatarColor : avatarColor,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        {/* Show initials if no avatar image */}
+        {/* Show themed icon if no custom avatar image */}
         {!avatarUrl && (
-          <span className="avatar-initials" style={{ fontSize: `${size * 0.4}px` }}>
-            {getInitials(playerName)}
-          </span>
+          <div className="avatar-icon-wrapper">
+            <AvatarIcon playerId={playerId} size={size * 0.7} />
+          </div>
         )}
 
         {/* Status badges */}
