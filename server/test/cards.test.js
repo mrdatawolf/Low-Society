@@ -23,8 +23,8 @@ describe('Cards Module', () => {
       expect(values).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     });
 
-    test('should have 3 prestige cards', () => {
-      expect(PRESTIGE_CARDS).toHaveLength(3);
+    test('should have 2 prestige cards', () => {
+      expect(PRESTIGE_CARDS).toHaveLength(2);
     });
 
     test('prestige cards should have 2x multiplier', () => {
@@ -33,13 +33,13 @@ describe('Cards Module', () => {
       });
     });
 
-    test('should have 3 disgrace cards', () => {
-      expect(DISGRACE_CARDS).toHaveLength(3);
+    test('should have 2 disgrace cards', () => {
+      expect(DISGRACE_CARDS).toHaveLength(2);
     });
 
     test('disgrace cards should have correct effects', () => {
       const effects = DISGRACE_CARDS.map(c => c.effect).sort();
-      expect(effects).toEqual(['faux-pas', 'passe', 'scandale']);
+      expect(effects).toEqual(['faux-pas', 'passe']);
     });
 
     test('should have 1 special card', () => {
@@ -56,9 +56,9 @@ describe('Cards Module', () => {
   });
 
   describe('buildItemDeck', () => {
-    test('should build a deck of 17 cards', () => {
+    test('should build a deck of 15 cards', () => {
       const deck = buildItemDeck();
-      expect(deck).toHaveLength(17); // 10 luxury + 3 prestige + 3 disgrace + 1 special
+      expect(deck).toHaveLength(15); // 10 luxury + 2 prestige + 2 disgrace + 1 special
     });
 
     test('should shuffle the deck', () => {
@@ -127,29 +127,9 @@ describe('Cards Module', () => {
   });
 
   describe('isGameEndingCard', () => {
-    test('prestige cards should be game ending', () => {
-      PRESTIGE_CARDS.forEach(card => {
-        expect(isGameEndingCard(card)).toBe(true);
-      });
-    });
-
-    test('scandale card should be game ending', () => {
-      const scandale = DISGRACE_CARDS.find(c => c.effect === 'scandale');
-      expect(isGameEndingCard(scandale)).toBe(true);
-    });
-
-    test('faux-pas should not be game ending', () => {
-      const fauxPas = DISGRACE_CARDS.find(c => c.effect === 'faux-pas');
-      expect(isGameEndingCard(fauxPas)).toBe(false);
-    });
-
-    test('passe should not be game ending', () => {
-      const passe = DISGRACE_CARDS.find(c => c.effect === 'passe');
-      expect(isGameEndingCard(passe)).toBe(false);
-    });
-
-    test('luxury cards should not be game ending', () => {
-      LUXURY_CARDS.forEach(card => {
+    test('no cards should end the game (play entire deck)', () => {
+      // LOW SOCIETY RULE: Game ends when deck is empty, not after specific cards
+      [...LUXURY_CARDS, ...PRESTIGE_CARDS, ...DISGRACE_CARDS, ...SPECIAL_CARDS].forEach(card => {
         expect(isGameEndingCard(card)).toBe(false);
       });
     });
@@ -201,28 +181,6 @@ describe('Cards Module', () => {
       expect(calculateScore(player)).toBe(5);
     });
 
-    test('should halve score for scandale', () => {
-      const scandale = DISGRACE_CARDS.find(c => c.effect === 'scandale');
-      const player = {
-        wonCards: [
-          LUXURY_CARDS[9], // value 10
-          scandale, // halves
-        ]
-      };
-      expect(calculateScore(player)).toBe(5);
-    });
-
-    test('should apply prestige before scandale', () => {
-      const scandale = DISGRACE_CARDS.find(c => c.effect === 'scandale');
-      const player = {
-        wonCards: [
-          LUXURY_CARDS[4], // value 5
-          PRESTIGE_CARDS[0], // 2x
-          scandale, // halves
-        ]
-      };
-      expect(calculateScore(player)).toBe(5); // (5 * 2) / 2
-    });
 
     test('should never return negative score', () => {
       const passe = DISGRACE_CARDS.find(c => c.effect === 'passe');

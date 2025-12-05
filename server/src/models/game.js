@@ -6,6 +6,7 @@ export const GAME_PHASES = {
   STARTING: 'starting',         // Game is starting (removing random bills)
   AUCTION: 'auction',           // Active auction
   CARD_SWAP: 'card_swap',       // Pawn Shop Trade - winner selecting cards to swap
+  DISCARD_LUXURY: 'discard_luxury', // Repo Man - player selecting luxury to discard
   GAME_OVER: 'game_over'        // Game ended
 };
 
@@ -22,11 +23,11 @@ export class Game {
     this.itemDeck = [];
     this.currentCard = null;
     this.currentAuction = null;
-    this.gameEndingCardsRevealed = 0;
     this.host = null;
     this.createdAt = Date.now();
     this.results = null;
     this.nextStartingPlayerId = null; // Track who starts the next auction
+    this.discardingPlayerId = null; // Track who needs to discard a luxury card
   }
 
   // Add a player to the game
@@ -94,6 +95,7 @@ export class Game {
 
   // Start the next auction
   startNextAuction() {
+    // LOW SOCIETY RULE: Game ends when deck is empty (all 15 cards played)
     if (this.itemDeck.length === 0) {
       this.endGame();
       return;
@@ -101,15 +103,6 @@ export class Game {
 
     // Draw next card
     this.currentCard = this.itemDeck.shift();
-
-    // Check if this is a game-ending card
-    if (isGameEndingCard(this.currentCard)) {
-      this.gameEndingCardsRevealed++;
-      if (this.gameEndingCardsRevealed >= 4) {
-        this.endGame();
-        return;
-      }
-    }
 
     // Reset all players for new auction
     this.players.forEach(player => {
@@ -238,15 +231,17 @@ export class Game {
 
       // Check for special card effects
       if (this.currentCard.type === 'special' && this.currentCard.effect === 'card-swap') {
-        // TODO: Implement card swap UI
-        // For now, just continue to next auction
-        // this.phase = GAME_PHASES.CARD_SWAP;
-        // this.currentAuction.swapWinner = winner.id;
-        // return; // Don't start next auction yet
+        // Enter card swap phase - winner must select two cards to swap
+        this.phase = GAME_PHASES.CARD_SWAP;
+        this.currentAuction.swapWinner = winner.id;
+        return; // Don't start next auction yet, wait for swap
       }
 
-      // Apply disgrace effects
-      this.applyDisgraceEffect(winner, this.currentCard);
+      // Apply disgrace effects - returns true if waiting for player input
+      const needsPlayerInput = this.applyDisgraceEffect(winner, this.currentCard);
+      if (needsPlayerInput) {
+        return; // Don't start next auction yet, wait for discard
+      }
     }
 
     // Start next auction
@@ -265,15 +260,18 @@ export class Game {
       // Loser starts the next auction (they "won" by getting stuck with it)
       this.nextStartingPlayerId = loser.id;
 
-      // Apply disgrace effect
-      this.applyDisgraceEffect(loser, this.currentCard);
-
       // All other players lose their bid money
       this.players.forEach(player => {
         if (player.id !== loser.id && player.currentBid.length > 0) {
           this.removeMoneyFromPlayer(player.id, player.currentBid);
         }
       });
+
+      // Apply disgrace effect - returns true if waiting for player input
+      const needsPlayerInput = this.applyDisgraceEffect(loser, this.currentCard);
+      if (needsPlayerInput) {
+        return; // Don't start next auction yet, wait for discard
+      }
     }
 
     // Start next auction
@@ -288,6 +286,12 @@ export class Game {
 
     if (swapperPlayerId !== this.currentAuction.swapWinner) {
       throw new Error('Only the winner can swap cards');
+    }
+
+    // Allow skipping the swap (if all params are null)
+    if (!player1Id && !card1Id && !player2Id && !card2Id) {
+      this.startNextAuction();
+      return;
     }
 
     const player1 = this.players.find(p => p.id === player1Id);
@@ -316,13 +320,45 @@ export class Game {
     if (card.type !== CARD_TYPES.DISGRACE) return;
 
     if (card.effect === 'faux-pas') {
-      // Remove one luxury card if player has any
-      const luxuryIndex = player.wonCards.findIndex(c => c.type === CARD_TYPES.LUXURY);
-      if (luxuryIndex !== -1) {
-        player.wonCards.splice(luxuryIndex, 1);
+      // Check if player has any luxury cards
+      const hasLuxuryCards = player.wonCards.some(c => c.type === CARD_TYPES.LUXURY);
+      if (hasLuxuryCards) {
+        // Enter discard phase - player must choose which luxury to discard
+        this.phase = GAME_PHASES.DISCARD_LUXURY;
+        this.discardingPlayerId = player.id;
+        return true; // Signal that we need player input
       }
-      // If no luxury cards, the effect waits for the next one (handled in score calculation)
+      // If no luxury cards, nothing to discard
     }
+    return false; // No player input needed
+  }
+
+  // Discard a luxury card (Repo Man effect)
+  discardLuxuryCard(playerId, cardId) {
+    if (this.phase !== GAME_PHASES.DISCARD_LUXURY) {
+      throw new Error('Not in discard luxury phase');
+    }
+
+    if (playerId !== this.discardingPlayerId) {
+      throw new Error('Only the affected player can discard');
+    }
+
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Player not found');
+
+    const cardIndex = player.wonCards.findIndex(c => c.id === cardId && c.type === CARD_TYPES.LUXURY);
+    if (cardIndex === -1) {
+      throw new Error('Card not found or not a luxury card');
+    }
+
+    // Remove the selected luxury card
+    player.wonCards.splice(cardIndex, 1);
+
+    // Reset discard state
+    this.discardingPlayerId = null;
+
+    // Continue to next auction
+    this.startNextAuction();
   }
 
   // Remove money cards from player
@@ -454,9 +490,10 @@ export class Game {
       })),
       currentCard: this.currentCard,
       currentAuction: this.currentAuction,
-      gameEndingCardsRevealed: this.gameEndingCardsRevealed,
+      cardsRemaining: this.itemDeck.length, // How many cards left in deck
       host: this.host,
-      results: this.results
+      results: this.results,
+      discardingPlayerId: this.discardingPlayerId
     };
   }
 

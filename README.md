@@ -22,20 +22,28 @@ Low Society is an auction card game for 3-5 players where you bid with food stam
 
 ```
 Low-Society/
-├── server/          # Node.js backend with Socket.io
+├── server/                 # Node.js backend with Socket.io
 │   ├── src/
-│   │   ├── models/      # Game logic and card definitions
-│   │   ├── services/    # Room management
-│   │   └── server.js    # Main server file
+│   │   ├── models/        # Game logic and card definitions
+│   │   ├── services/      # Room management
+│   │   └── server.js      # Main server file (port 3003)
+│   ├── test/              # Jest test suite (92 tests)
+│   │   ├── cards.test.js
+│   │   ├── game.test.js
+│   │   └── roomManager.test.js
 │   └── package.json
-├── client/          # React frontend with Vite
+├── client/                # React frontend with Vite
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── services/    # Socket.io client
-│   │   ├── styles/      # CSS styles
-│   │   └── App.jsx      # Main app
+│   │   ├── components/   # React components (Home, Lobby, Game screens)
+│   │   ├── services/     # Socket.io client service
+│   │   ├── styles/       # CSS styles with Low Society theme
+│   │   ├── test/         # Vitest test suite (28 tests)
+│   │   └── App.jsx       # Main app (runs on port 3004)
 │   └── package.json
-└── README.md
+├── README.md              # This file
+├── QUICKSTART.md          # Quick setup guide
+├── IMPLEMENTATION.md      # Implementation details
+└── TESTING.md             # Test documentation
 ```
 
 ## Setup Instructions
@@ -148,13 +156,34 @@ npm run dev  # Vite dev server with hot reload
 ```
 
 ### Running Tests
+
+**Server Tests (92 tests - Jest)**
 ```bash
 cd server
 npm test              # Run all tests once
-npm run test:watch    # Run tests in watch mode
 ```
 
-See [server/test/README.md](server/test/README.md) for detailed test documentation.
+**Client Tests (28 tests - Vitest)**
+```bash
+cd client
+npm test              # Run all tests once
+npm run test:watch    # Run in watch mode
+```
+
+**Integration Tests (Automated Full Game)**
+```bash
+cd integration-test
+.\run-test.ps1              # PowerShell (auto-starts server)
+# OR
+run-test.bat                # Windows batch file
+# OR
+npm test                    # Manual (server must be running)
+```
+
+**Total: 120 unit tests + automated integration testing** covering game logic, multiplayer, UI interactions, and full game simulations!
+
+See [TESTING.md](TESTING.md) for detailed test documentation.
+See [integration-test/README.md](integration-test/README.md) for integration test details.
 
 ### Production Build
 ```bash
@@ -167,15 +196,45 @@ cd ../server
 npm start
 ```
 
-## Future Enhancements
+## Current Status
 
-- [ ] Game history and statistics
+### ✅ Completed Features
+- [x] Core game logic with Low Society rules
+- [x] Turn-based bidding system
+- [x] Standard and reverse auctions
+- [x] Random bill removal at game start
+- [x] Winner/loser starts next auction
+- [x] Multiplayer room system (3-5 players)
+- [x] Real-time WebSocket communication
+- [x] React UI with all game screens
+- [x] Comprehensive test suite (120 tests)
+- [x] Game over and winner determination
+
+### 🚧 Known Limitations
+- [ ] No game history/statistics
+- [ ] No reconnection handling if disconnected
+- [ ] No spectator mode
+
+### 🔮 Future Enhancements
+
+**🎨 Next Priority: UI/UX Enhancement** (See [UI-ENHANCEMENT-PLAN.md](UI-ENHANCEMENT-PLAN.md))
+- [ ] Animated landing page with themed background
+- [ ] Poker table view with player avatars positioned around table
+- [ ] Card reveal and collection animations
+- [ ] Card swap animation (Pawn Shop Trade)
+- [ ] Card discard animation (Repo Man)
+- [ ] Smooth phase transitions and overlays
+- [ ] Turn indicators and visual feedback
+
+**Other Future Features:**
+- [ ] Game history and statistics tracking
 - [ ] Player accounts and authentication
-- [ ] More Low Society themed cards
-- [ ] Sound effects and animations
+- [ ] Sound effects and music
 - [ ] Mobile-responsive improvements
-- [ ] Reconnection handling
-- [ ] Spectator mode
+- [ ] Automatic reconnection handling
+- [ ] Spectator mode for observers
+- [ ] More Low Society themed cards
+- [ ] Tournament mode
 
 ## Credits
 

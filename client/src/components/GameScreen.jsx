@@ -1,7 +1,9 @@
 import { useState } from 'react';
 
-export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onLeaveRoom }) {
+export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
+  const [selectedSwapCards, setSelectedSwapCards] = useState([]);
+  const [selectedDiscardCard, setSelectedDiscardCard] = useState(null);
 
   const myPlayer = gameState.players.find(p => p.id === myPlayerId);
   const isMyTurn = gameState.currentAuction?.currentTurnPlayerId === myPlayerId && !myPlayer?.hasPassed;
@@ -54,6 +56,65 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
       : 'BIDDING TO WIN';
   };
 
+  // Card swap handlers
+  const isCardSwapPhase = gameState.phase === 'card_swap';
+  const isSwapWinner = isCardSwapPhase && gameState.currentAuction?.swapWinner === myPlayerId;
+
+  const handleCardClick = (playerId, cardId) => {
+    if (!isSwapWinner) return;
+
+    const selection = { playerId, cardId };
+    const existingIndex = selectedSwapCards.findIndex(
+      s => s.playerId === playerId && s.cardId === cardId
+    );
+
+    if (existingIndex !== -1) {
+      // Deselect
+      setSelectedSwapCards(selectedSwapCards.filter((_, i) => i !== existingIndex));
+    } else {
+      // Select (max 2 cards)
+      if (selectedSwapCards.length < 2) {
+        setSelectedSwapCards([...selectedSwapCards, selection]);
+      }
+    }
+  };
+
+  const handleConfirmSwap = () => {
+    if (selectedSwapCards.length === 2) {
+      const [card1, card2] = selectedSwapCards;
+      onExecuteCardSwap(card1.playerId, card1.cardId, card2.playerId, card2.cardId);
+      setSelectedSwapCards([]);
+    }
+  };
+
+  const handleSkipSwap = () => {
+    onExecuteCardSwap(null, null, null, null);
+    setSelectedSwapCards([]);
+  };
+
+  const isCardSelected = (playerId, cardId) => {
+    return selectedSwapCards.some(s => s.playerId === playerId && s.cardId === cardId);
+  };
+
+  // Discard luxury handlers
+  const isDiscardLuxuryPhase = gameState.phase === 'discard_luxury';
+  const isDiscardingPlayer = isDiscardLuxuryPhase && gameState.discardingPlayerId === myPlayerId;
+
+  const handleLuxuryCardClick = (cardId) => {
+    if (!isDiscardingPlayer) return;
+    setSelectedDiscardCard(cardId === selectedDiscardCard ? null : cardId);
+  };
+
+  const handleConfirmDiscard = () => {
+    if (selectedDiscardCard) {
+      onDiscardLuxuryCard(selectedDiscardCard);
+      setSelectedDiscardCard(null);
+    }
+  };
+
+  // Get luxury cards for the discarding player
+  const myLuxuryCards = myPlayer?.wonCards.filter(c => c.type === 'luxury') || [];
+
   return (
     <div className="game-screen">
       <div className="game-header">
@@ -63,8 +124,8 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
             <span className="info-value">{gameState.roomCode}</span>
           </div>
           <div className="info-item">
-            <span className="info-label">Game Enders</span>
-            <span className="info-value">{gameState.gameEndingCardsRevealed}/4</span>
+            <span className="info-label">Cards Left</span>
+            <span className="info-value">{gameState.cardsRemaining}/15</span>
           </div>
           <div className="info-item">
             <span className="info-label">Auction Type</span>
@@ -115,7 +176,17 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
               {player.wonCards.length > 0 && (
                 <div className="won-cards">
                   {player.wonCards.map((card) => (
-                    <div key={card.id} className="won-card-mini">
+                    <div
+                      key={card.id}
+                      className={`won-card-mini ${
+                        isSwapWinner && isCardSelected(player.id, card.id) ? 'selected-swap' : ''
+                      } ${isSwapWinner ? 'clickable' : ''}`}
+                      onClick={() => handleCardClick(player.id, card.id)}
+                      style={{
+                        cursor: isSwapWinner ? 'pointer' : 'default',
+                        border: isCardSelected(player.id, card.id) ? '2px solid var(--accent-primary)' : ''
+                      }}
+                    >
                       {card.name} {card.value && `(${card.value})`}
                     </div>
                   ))}
@@ -171,65 +242,159 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
           )}
         </div>
 
-        {/* Money Hand */}
+        {/* Money Hand / Card Swap Control / Discard Control */}
         <div className="money-hand">
-          <h3>Your Food Stamps</h3>
-          {privateState.removedBill && (
-            <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', marginBottom: '10px' }}>
-              Lost at start: ${privateState.removedBill.value}
-            </p>
-          )}
-          <div className="money-cards">
-            {privateState.moneyHand.map((moneyCard) => (
-              <div
-                key={moneyCard.id}
-                className={`money-card ${
-                  !moneyCard.available ? 'disabled' : ''
-                } ${
-                  selectedMoney.includes(moneyCard.id) ? 'selected' : ''
-                }`}
-                onClick={() => handleMoneyClick(moneyCard)}
-              >
-                ${moneyCard.value}
-              </div>
-            ))}
-          </div>
-          {isMyTurn && (
+          {isDiscardLuxuryPhase ? (
+            // Discard Luxury UI
             <>
-              <div className="bid-total">
-                Total Bid: ${calculateBidTotal()}
-              </div>
-              <div className="bid-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={handlePlaceBid}
-                  disabled={selectedMoney.length === 0 || calculateBidTotal() <= gameState.currentAuction?.highestBid}
-                >
-                  Place Bid
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={handlePass}
-                >
-                  Pass
-                </button>
-              </div>
-              {calculateBidTotal() <= gameState.currentAuction?.highestBid && selectedMoney.length > 0 && (
-                <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', marginTop: '10px' }}>
-                  Bid must be higher than ${gameState.currentAuction.highestBid}
+              <h3>🚨 Repo Man</h3>
+              {isDiscardingPlayer ? (
+                <>
+                  <p style={{ color: 'var(--danger-color)', marginBottom: '15px' }}>
+                    Choose one luxury item to discard
+                  </p>
+                  <div className="won-cards" style={{ marginBottom: '15px' }}>
+                    {myLuxuryCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className={`won-card-mini clickable ${
+                          selectedDiscardCard === card.id ? 'selected-swap' : ''
+                        }`}
+                        onClick={() => handleLuxuryCardClick(card.id)}
+                        style={{
+                          cursor: 'pointer',
+                          border: selectedDiscardCard === card.id ? '2px solid var(--danger-color)' : '',
+                          padding: '8px',
+                          marginBottom: '5px'
+                        }}
+                      >
+                        {card.name} ({card.value})
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bid-actions">
+                    <button
+                      className="btn btn-danger"
+                      onClick={handleConfirmDiscard}
+                      disabled={!selectedDiscardCard}
+                    >
+                      Discard Card
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  Waiting for {gameState.players.find(p => p.id === gameState.discardingPlayerId)?.name} to discard a luxury item...
                 </p>
               )}
             </>
-          )}
-          {!isMyTurn && myPlayer?.hasPassed && (
-            <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>
-              You have passed this round
-            </p>
-          )}
-          {!isMyTurn && !myPlayer?.hasPassed && (
-            <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>
-              Waiting for {gameState.players.find(p => p.id === gameState.currentAuction?.currentTurnPlayerId)?.name || 'other player'}'s turn...
-            </p>
+          ) : isCardSwapPhase ? (
+            // Card Swap UI
+            <>
+              <h3>🔄 Pawn Shop Trade</h3>
+              {isSwapWinner ? (
+                <>
+                  <p style={{ color: 'var(--accent-primary)', marginBottom: '15px' }}>
+                    Select 2 cards to swap between players
+                  </p>
+                  <div style={{ marginBottom: '15px' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Selected: {selectedSwapCards.length}/2
+                    </p>
+                    {selectedSwapCards.map((sel, idx) => {
+                      const player = gameState.players.find(p => p.id === sel.playerId);
+                      const card = player?.wonCards.find(c => c.id === sel.cardId);
+                      return (
+                        <div key={idx} style={{ fontSize: '0.9rem', marginTop: '5px' }}>
+                          {idx + 1}. {player?.name}: {card?.name}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="bid-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleConfirmSwap}
+                      disabled={selectedSwapCards.length !== 2}
+                    >
+                      Confirm Swap
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handleSkipSwap}
+                    >
+                      Skip Swap
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  Waiting for {gameState.players.find(p => p.id === gameState.currentAuction?.swapWinner)?.name} to swap cards...
+                </p>
+              )}
+            </>
+          ) : (
+            // Normal Auction UI
+            <>
+              <h3>Your Food Stamps</h3>
+              {privateState.removedBill && (
+                <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', marginBottom: '10px' }}>
+                  Lost at start: ${privateState.removedBill.value}
+                </p>
+              )}
+              <div className="money-cards">
+                {privateState.moneyHand.map((moneyCard) => (
+                  <div
+                    key={moneyCard.id}
+                    className={`money-card ${
+                      !moneyCard.available ? 'disabled' : ''
+                    } ${
+                      selectedMoney.includes(moneyCard.id) ? 'selected' : ''
+                    }`}
+                    onClick={() => handleMoneyClick(moneyCard)}
+                  >
+                    ${moneyCard.value}
+                  </div>
+                ))}
+              </div>
+              {isMyTurn && (
+                <>
+                  <div className="bid-total">
+                    Total Bid: ${calculateBidTotal()}
+                  </div>
+                  <div className="bid-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handlePlaceBid}
+                      disabled={selectedMoney.length === 0 || calculateBidTotal() <= gameState.currentAuction?.highestBid}
+                    >
+                      Place Bid
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handlePass}
+                    >
+                      Pass
+                    </button>
+                  </div>
+                  {calculateBidTotal() <= gameState.currentAuction?.highestBid && selectedMoney.length > 0 && (
+                    <p style={{ color: 'var(--danger-color)', fontSize: '0.9rem', marginTop: '10px' }}>
+                      Bid must be higher than ${gameState.currentAuction.highestBid}
+                    </p>
+                  )}
+                </>
+              )}
+              {!isMyTurn && myPlayer?.hasPassed && (
+                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>
+                  You have passed this round
+                </p>
+              )}
+              {!isMyTurn && !myPlayer?.hasPassed && (
+                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>
+                  Waiting for {gameState.players.find(p => p.id === gameState.currentAuction?.currentTurnPlayerId)?.name || 'other player'}'s turn...
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

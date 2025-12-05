@@ -22,17 +22,17 @@ export const LUXURY_CARDS = [
 ];
 
 // Prestige cards - doubles your status (theme: ultimate achievements)
+// LOW SOCIETY RULE: Only 2 "good" cards
 export const PRESTIGE_CARDS = [
   { id: 'pres-1', type: CARD_TYPES.PRESTIGE, multiplier: 2, name: 'Mullet Hairstyle', description: 'Business in front, party in back' },
-  { id: 'pres-2', type: CARD_TYPES.PRESTIGE, multiplier: 2, name: 'Monster Truck Rally Tickets', description: 'VIP section' },
-  { id: 'pres-3', type: CARD_TYPES.PRESTIGE, multiplier: 2, name: 'Confederate Flag Collection', description: 'Heritage not hate' }
+  { id: 'pres-2', type: CARD_TYPES.PRESTIGE, multiplier: 2, name: 'Monster Truck Rally Tickets', description: 'VIP section' }
 ];
 
 // Disgrace cards - negative effects
+// LOW SOCIETY RULE: Only 2 "bad" cards
 export const DISGRACE_CARDS = [
   { id: 'disg-1', type: CARD_TYPES.DISGRACE, effect: 'faux-pas', name: 'Repo Man', description: 'Lose one luxury item' },
-  { id: 'disg-2', type: CARD_TYPES.DISGRACE, effect: 'passe', penalty: -5, name: 'DUI Citation', description: 'Lose 5 status' },
-  { id: 'disg-3', type: CARD_TYPES.DISGRACE, effect: 'scandale', penalty: 0.5, name: 'Jerry Springer Episode', description: 'Halve your status' }
+  { id: 'disg-2', type: CARD_TYPES.DISGRACE, effect: 'passe', penalty: -5, name: 'DUI Citation', description: 'Lose 5 status' }
 ];
 
 // NEW: Low Society specific card - Card Trading
@@ -46,14 +46,27 @@ export const MONEY_DENOMINATIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25];
 
 // Build the complete item deck
 export function buildItemDeck() {
-  const deck = [
+  // LOW SOCIETY RULE: Special deck building to ensure swap card appears in cards 8-15
+  // 1. Separate swap card from other cards
+  const swapCard = SPECIAL_CARDS[0]; // Pawn Shop Trade
+  const otherCards = [
     ...LUXURY_CARDS,
     ...PRESTIGE_CARDS,
-    ...DISGRACE_CARDS,
-    ...SPECIAL_CARDS
+    ...DISGRACE_CARDS
   ];
 
-  return shuffleDeck(deck);
+  // 2. Shuffle all other cards (14 cards)
+  const shuffledOthers = shuffleDeck(otherCards);
+
+  // 3. Split into two piles of 7 each
+  const firstHalf = shuffledOthers.slice(0, 7);
+  const secondHalf = shuffledOthers.slice(7, 14);
+
+  // 4. Shuffle the swap card into the second half
+  const secondHalfWithSwap = shuffleDeck([...secondHalf, swapCard]);
+
+  // 5. Put first half on top of second half
+  return [...firstHalf, ...secondHalfWithSwap];
 }
 
 // Shuffle utility
@@ -97,10 +110,10 @@ export function removeRandomBill(moneyHand) {
   return null;
 }
 
-// Check if a card ends the game (4th green-backed card)
+// LOW SOCIETY RULE: No game-ending cards - play through entire deck!
+// This function is kept for compatibility but always returns false
 export function isGameEndingCard(card) {
-  return card.type === CARD_TYPES.PRESTIGE ||
-         (card.type === CARD_TYPES.DISGRACE && card.effect === 'scandale');
+  return false; // Game only ends when deck is empty
 }
 
 // Calculate player's final score

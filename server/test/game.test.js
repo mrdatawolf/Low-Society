@@ -15,7 +15,6 @@ describe('Game Class', () => {
       expect(game.players).toHaveLength(0);
       expect(game.itemDeck).toHaveLength(0);
       expect(game.currentCard).toBeNull();
-      expect(game.gameEndingCardsRevealed).toBe(0);
     });
   });
 
@@ -469,19 +468,16 @@ describe('Game Class', () => {
   });
 
   describe('Game Ending', () => {
-    test('should track game ending cards revealed', () => {
+    test('should play through entire deck (15 cards)', () => {
       game.addPlayer('p1', 'Alice');
       game.addPlayer('p2', 'Bob');
       game.addPlayer('p3', 'Charlie');
 
       game.startGame();
 
-      // Check if first card is a game ending card
-      if (isGameEndingCard(game.currentCard)) {
-        expect(game.gameEndingCardsRevealed).toBe(1);
-      } else {
-        expect(game.gameEndingCardsRevealed).toBe(0);
-      }
+      // First card should be drawn
+      expect(game.currentCard).toBeTruthy();
+      expect(game.itemDeck).toHaveLength(14); // 15 - 1 revealed
     });
 
     test('should calculate final results correctly', () => {

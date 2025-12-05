@@ -12,6 +12,7 @@ const GAME_PHASES = {
   STARTING: 'starting',
   AUCTION: 'auction',
   CARD_SWAP: 'card_swap',
+  DISCARD_LUXURY: 'discard_luxury',
   GAME_OVER: 'game_over'
 };
 
@@ -52,6 +53,10 @@ function App() {
     });
 
     socketService.on('cards_swapped', ({ publicState }) => {
+      setGameState(publicState);
+    });
+
+    socketService.on('luxury_card_discarded', ({ publicState }) => {
       setGameState(publicState);
     });
 
@@ -122,6 +127,26 @@ function App() {
     }
   };
 
+  const handleExecuteCardSwap = async (player1Id, card1Id, player2Id, card2Id) => {
+    try {
+      setError('');
+      await socketService.executeCardSwap(player1Id, card1Id, player2Id, card2Id);
+    } catch (err) {
+      setError(err.message);
+      console.error('Card swap error:', err);
+    }
+  };
+
+  const handleDiscardLuxuryCard = async (cardId) => {
+    try {
+      setError('');
+      await socketService.discardLuxuryCard(cardId);
+    } catch (err) {
+      setError(err.message);
+      console.error('Discard luxury card error:', err);
+    }
+  };
+
   const handleLeaveRoom = async () => {
     try {
       await socketService.leaveRoom();
@@ -168,7 +193,8 @@ function App() {
 
       {(phase === GAME_PHASES.STARTING ||
         phase === GAME_PHASES.AUCTION ||
-        phase === GAME_PHASES.CARD_SWAP) &&
+        phase === GAME_PHASES.CARD_SWAP ||
+        phase === GAME_PHASES.DISCARD_LUXURY) &&
         gameState &&
         privateState && (
         <GameScreen
@@ -177,6 +203,8 @@ function App() {
           myPlayerId={myPlayerId}
           onPlaceBid={handlePlaceBid}
           onPass={handlePass}
+          onExecuteCardSwap={handleExecuteCardSwap}
+          onDiscardLuxuryCard={handleDiscardLuxuryCard}
           onLeaveRoom={handleLeaveRoom}
         />
       )}
