@@ -4,6 +4,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { LobbyScreen } from './components/LobbyScreen';
 import { GameScreen } from './components/GameScreen';
 import { GameOverScreen } from './components/GameOverScreen';
+import { RulesModal, RulesButton } from './components/ui/RulesModal';
 import './styles/App.css';
 
 const GAME_PHASES = {
@@ -21,6 +22,7 @@ function App() {
   const [gameState, setGameState] = useState(null);
   const [privateState, setPrivateState] = useState(null);
   const [error, setError] = useState('');
+  const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
     // Connect to server
@@ -174,6 +176,12 @@ function App() {
 
   return (
     <div className="app">
+      {/* Rules button - available on all screens */}
+      <RulesButton onClick={() => setShowRules(true)} />
+
+      {/* Rules modal */}
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
+
       {phase === GAME_PHASES.HOME && (
         <HomeScreen
           onCreateRoom={handleCreateRoom}

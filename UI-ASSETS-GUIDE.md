@@ -46,9 +46,11 @@ This document explains how the UI is structured for easy asset replacement. All 
 - Easy to replace with: Custom avatar images or user uploads
 
 **Money/Food Stamps:**
-- Green rectangles with $ text
-- CSS styling only
-- Easy to replace with: Food stamp images/sprites
+- ✅ **IMPLEMENTED**: SVG food stamp bills with authentic denominations
+- Color-coded bills ($1-$25) with security features
+- Different colors for different values (green, mint, blue, plum, gold)
+- Includes MoneyHand, BidPot, and MoneyDisplay components
+- Easy to replace with: Custom food stamp images
 
 **Table:**
 - CSS gradient oval/rectangle
@@ -65,17 +67,20 @@ client/src/
 │   ├── HomeScreen.jsx
 │   ├── GameScreen.jsx
 │   └── ui/              # Reusable UI components
-│       ├── Card.jsx     # ✅ COMPLETED
+│       ├── Card.jsx     # ✅ COMPLETED (Phase 3)
 │       ├── PlayerAvatar.jsx   # ✅ COMPLETED (Phase 2)
 │       ├── AvatarIcons.jsx    # ✅ COMPLETED (Phase 2)
-│       └── PokerTable.jsx     # ✅ COMPLETED (Phase 2)
+│       ├── PokerTable.jsx     # ✅ COMPLETED (Phase 2)
+│       ├── FoodStampBills.jsx # ✅ COMPLETED (Phase 3)
+│       └── PhaseOverlay.jsx   # ✅ COMPLETED (Phase 3)
 ├── styles/              # CSS styling (placeholder visuals)
 │   ├── App.css          # Global styles & CSS variables
 │   ├── HomeScreen.css   # Landing page animations
 │   ├── PokerTable.css   # ✅ COMPLETED (Phase 2)
 │   ├── PlayerAvatar.css # ✅ COMPLETED (Phase 2)
 │   ├── Card.css         # ✅ COMPLETED (Phase 3)
-│   └── CardAnimations.css # (future enhancements)
+│   ├── FoodStampBills.css # ✅ COMPLETED (Phase 3)
+│   └── PhaseOverlay.css   # ✅ COMPLETED (Phase 3)
 └── assets/              # Real assets (FUTURE - not created yet)
     ├── backgrounds/
     │   ├── landing.jpg
@@ -171,33 +176,36 @@ const theme = useTheme(); // 'classic', 'dark-mode', or 'user-custom'
 - Consistent assignment (same player ID = same avatar)
 - 10 unique avatars ensure variety in multiplayer games
 
-### 🔜 Phase 3: Card Animations (FUTURE)
-- [ ] Cards: Create `Card.jsx` component that accepts:
-  - `cardData` prop (name, value, type, description)
-  - `frontImage` prop (optional, defaults to styled div)
-  - `backImage` prop (optional, defaults to pattern)
+### ✅ Phase 3: Enhanced Visuals & Animations (COMPLETED)
+- [x] **Money/Food Stamps**: SVG themed food stamp bills
+  - Color-coded denominations ($1-$25)
+  - FoodStampBill component with selection states
+  - MoneyHand component for player's money display
+  - BidPot component for showing stacked bids
+  - MoneyDisplay component for player stats
 
-**Example Card Component:**
-```jsx
-function Card({ cardData, frontImage, backImage, isFaceUp }) {
-  return (
-    <div className={`card ${isFaceUp ? 'face-up' : 'face-down'}`}>
-      {isFaceUp ? (
-        frontImage ?
-          <img src={frontImage} alt={cardData.name} /> :
-          <div className="card-placeholder">
-            <span className="card-name">{cardData.name}</span>
-            <span className="card-value">{cardData.value}</span>
-          </div>
-      ) : (
-        backImage ?
-          <img src={backImage} alt="Card back" /> :
-          <div className="card-back-placeholder" />
-      )}
-    </div>
-  );
-}
-```
+- [x] **Card Animations**: Comprehensive animation system
+  - Card reveal animation (3D flip effect)
+  - Card collection animation (fly to winner)
+  - Card discard animation (fade away with rotation)
+  - Card swap animation (arc motion between players)
+  - Card selection pulse (for swap/discard phases)
+
+- [x] **Phase Overlays**: Visual feedback for game states
+  - AuctionTypeBanner (Bidding to Win vs Bidding to Avoid)
+  - PawnShopTradeOverlay (full-screen card swap phase)
+  - RepoManOverlay (full-screen discard luxury phase)
+  - TurnIndicator (shows current player's turn)
+  - WaitingOverlay (generic waiting message)
+  - GameStartingOverlay (countdown at game start)
+  - RoundTransitionOverlay (round number display)
+  - WinnerAnnouncementOverlay (game winner celebration)
+
+**Implemented Components:**
+- `Card.jsx` - Full-featured card with animations
+- `FoodStampBills.jsx` - Themed money system
+- `PhaseOverlay.jsx` - Game state visual feedback
+- All components support custom images or fallback to CSS/SVG placeholders
 
 ---
 
@@ -421,8 +429,22 @@ function AssetManager() {
 ---
 
 **Last Updated**: December 5, 2025
-**Status**: Phase 1 & 2 complete with themed placeholder graphics
+**Status**: Phases 1, 2 & 3 complete - Full game UI with themed graphics!
 **Completed Phases**:
 - ✅ Phase 1: Landing Page Enhancement (animated backgrounds, entrance animations)
 - ✅ Phase 2: Poker Table & Avatar System (themed SVG icons, positioned players, status indicators)
-**Next Phase**: Phase 3 - Card Animations (card reveal, collection, swap, discard)
+- ✅ Phase 3: Enhanced Visuals & Animations (food stamps, card animations, phase overlays)
+
+**What's Ready:**
+- 🎨 Complete visual system using CSS/SVG placeholders
+- 🎬 Full animation suite (cards, avatars, transitions)
+- 💵 Themed food stamp money system
+- 🎮 Phase indicators and overlays
+- 🔄 All ready to swap with custom graphics later!
+
+**Future Enhancements** (Optional):
+- Custom illustrated backgrounds
+- Hand-drawn card designs
+- Character avatar images
+- Sound effects
+- Particle effects (confetti, sparkles)

@@ -44,6 +44,15 @@
   }
 }
 
+/* Deck stack on the left */
+.table-deck {
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
 /* Table center area */
 .table-center {
   position: absolute;

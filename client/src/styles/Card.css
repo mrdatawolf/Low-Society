@@ -55,6 +55,81 @@
   }
 }
 
+/* Card Discard Animation - Fade Away (Repo Man) */
+.card-component.discarding {
+  animation: card-discard 0.8s ease-out forwards;
+}
+
+@keyframes card-discard {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8) rotate(-5deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.3) rotate(-15deg) translateY(50px);
+    opacity: 0;
+  }
+}
+
+/* Card Swap Animation - Arc Motion (Pawn Shop Trade) */
+.card-component.swapping {
+  animation: card-swap 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes card-swap {
+  0% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(var(--swap-x-mid, 0)) translateY(var(--swap-y-mid, -80px)) scale(0.9) rotate(10deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateX(var(--swap-x-mid, 0)) translateY(var(--swap-y-peak, -120px)) scale(0.8) rotate(0deg);
+    opacity: 0.8;
+    z-index: 100;
+  }
+  75% {
+    transform: translateX(var(--swap-x-end, 0)) translateY(var(--swap-y-mid, -80px)) scale(0.9) rotate(-10deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(var(--swap-x-end, 0)) translateY(var(--swap-y-end, 0)) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Card Selection Glow (for swap/discard) */
+.card-component.selectable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-component.selectable:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(212, 175, 55, 0.6);
+}
+
+.card-component.selected-for-action {
+  animation: card-selection-pulse 1s ease-in-out infinite;
+  outline: 4px solid var(--accent-primary);
+  outline-offset: 4px;
+}
+
+@keyframes card-selection-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 8px rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.8);
+  }
+}
+
 /* Card sizes */
 .card-component.tiny {
   width: 30px;

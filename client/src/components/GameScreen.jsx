@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { PokerTable } from './ui/PokerTable';
 import { Card } from './ui/Card';
+import { MoneyHand } from './ui/FoodStampBills';
+import { AuctionTypeBanner, PawnShopTradeOverlay, RepoManOverlay, TurnIndicator } from './ui/PhaseOverlay';
+import '../styles/FoodStampBills.css';
+import '../styles/PhaseOverlay.css';
 
 export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
@@ -39,13 +43,6 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const handlePass = () => {
     setSelectedMoney([]);
     onPass();
-  };
-
-  const getAuctionTypeText = () => {
-    if (!gameState.currentAuction) return '';
-    return gameState.currentAuction.type === 'reverse'
-      ? 'BIDDING TO AVOID'
-      : 'BIDDING TO WIN';
   };
 
   // Card swap handlers
@@ -119,14 +116,24 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
             <span className="info-label">Cards Left</span>
             <span className="info-value">{gameState.cardsRemaining}/15</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Auction Type</span>
-            <span className="info-value" style={{
-              color: gameState.currentAuction?.type === 'reverse' ? 'var(--danger-color)' : 'var(--success-color)'
-            }}>
-              {getAuctionTypeText()}
-            </span>
-          </div>
+          {gameState.currentAuction && (
+            <>
+              <div className="info-item">
+                <span className="info-label">Auction</span>
+                <span className="info-value" style={{
+                  color: gameState.currentAuction.type === 'reverse' ? 'var(--danger-color)' : 'var(--success-color)'
+                }}>
+                  {gameState.currentAuction.type === 'reverse' ? '⚠️ Avoid' : '✨ Win'}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Highest Bid</span>
+                <span className="info-value" style={{ color: 'var(--accent-primary)', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  ${gameState.currentAuction.highestBid}
+                </span>
+              </div>
+            </>
+          )}
         </div>
         <button className="btn btn-danger" onClick={onLeaveRoom}>
           Leave Game
@@ -186,23 +193,8 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
             currentPlayerId={myPlayerId}
             currentTurnPlayerId={gameState.currentAuction?.currentTurnPlayerId}
             currentCard={gameState.currentCard}
+            cardsRemaining={gameState.cardsRemaining || 0}
           />
-
-          {/* Auction info below table */}
-          {gameState.currentAuction && (
-            <div className="auction-info-bar">
-              <div className="auction-type" style={{
-                color: gameState.currentAuction.type === 'reverse' ? 'var(--danger-color)' : 'var(--success-color)'
-              }}>
-                {gameState.currentAuction.type === 'reverse' ? '⚠️ BIDDING TO AVOID' : '✨ BIDDING TO WIN'}
-              </div>
-              <div className="highest-bid">
-                Highest Bid: <span style={{ color: 'var(--accent-primary)', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  ${gameState.currentAuction.highestBid}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Money Hand / Card Swap Control / Discard Control */}
@@ -307,21 +299,11 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
                   Lost at start: ${privateState.removedBill.value}
                 </p>
               )}
-              <div className="money-cards">
-                {privateState.moneyHand.map((moneyCard) => (
-                  <div
-                    key={moneyCard.id}
-                    className={`money-card ${
-                      !moneyCard.available ? 'disabled' : ''
-                    } ${
-                      selectedMoney.includes(moneyCard.id) ? 'selected' : ''
-                    }`}
-                    onClick={() => handleMoneyClick(moneyCard)}
-                  >
-                    ${moneyCard.value}
-                  </div>
-                ))}
-              </div>
+              <MoneyHand
+                moneyCards={privateState.moneyHand}
+                onMoneyClick={handleMoneyClick}
+                selectedMoney={selectedMoney}
+              />
               {isMyTurn && (
                 <>
                   <div className="bid-total">
@@ -363,6 +345,26 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
           )}
         </div>
       </div>
+
+      {/* Phase Overlays */}
+      <AuctionTypeBanner
+        auctionType={gameState.currentAuction?.type}
+        visible={!!gameState.currentAuction && !isCardSwapPhase && !isDiscardLuxuryPhase}
+      />
+
+      <PawnShopTradeOverlay
+        visible={isCardSwapPhase}
+      />
+
+      <RepoManOverlay
+        visible={isDiscardLuxuryPhase}
+        playerName={gameState.players.find(p => p.id === gameState.discardingPlayerId)?.name || 'Player'}
+      />
+
+      <TurnIndicator
+        playerName={gameState.players.find(p => p.id === gameState.currentAuction?.currentTurnPlayerId)?.name || 'Waiting'}
+        isMyTurn={isMyTurn}
+      />
     </div>
   );
 }

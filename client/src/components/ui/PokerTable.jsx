@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { PlayerAvatar } from './PlayerAvatar';
 import { Card } from './Card';
+import { CardDeck } from './CardDeck';
 import '../../styles/PokerTable.css';
+import '../../styles/CardDeck.css';
 
 /**
  * PokerTable Component
@@ -21,6 +23,7 @@ export function PokerTable({
   currentPlayerId,
   currentTurnPlayerId,
   currentCard = null,
+  cardsRemaining = 0,
   tableImage = null,
   onPlayerClick = null
 }) {
@@ -28,19 +31,33 @@ export function PokerTable({
   const [animateCollect, setAnimateCollect] = useState(false);
   const [previousCardId, setPreviousCardId] = useState(null);
   const [ghostCard, setGhostCard] = useState(null);
+  const [isDrawingCard, setIsDrawingCard] = useState(false);
+  const [drawingCardData, setDrawingCardData] = useState(null);
 
-  // Trigger reveal animation when a new card appears
+  // Trigger draw and reveal animation when a new card appears
   useEffect(() => {
     if (currentCard && currentCard.id !== previousCardId) {
-      setAnimateReveal(true);
-      setPreviousCardId(currentCard.id);
+      // Start draw animation from deck
+      setIsDrawingCard(true);
+      setDrawingCardData(currentCard);
 
-      // Reset animation after it completes
-      const timer = setTimeout(() => {
+      // After draw animation starts, trigger reveal
+      const drawTimer = setTimeout(() => {
+        setAnimateReveal(true);
+        setIsDrawingCard(false);
+        setPreviousCardId(currentCard.id);
+      }, 1000); // Start reveal halfway through draw
+
+      // Reset reveal animation after it completes
+      const revealTimer = setTimeout(() => {
         setAnimateReveal(false);
-      }, 1600); // Match animation duration (1.6s)
+        setDrawingCardData(null);
+      }, 2600); // Total: 1000ms draw + 1600ms reveal
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(drawTimer);
+        clearTimeout(revealTimer);
+      };
     }
   }, [currentCard, previousCardId]);
 
@@ -117,9 +134,19 @@ export function PokerTable({
           backgroundImage: tableImage ? `url(${tableImage})` : 'none',
         }}
       >
+        {/* Deck stack on the left */}
+        <div className="table-deck">
+          <CardDeck
+            cardsRemaining={cardsRemaining}
+            drawingCard={drawingCardData}
+            isDrawing={isDrawingCard}
+          />
+        </div>
+
         {/* Table center area (for cards, pot, etc.) */}
         <div className="table-center">
-          {currentCard ? (
+          {/* Only show card if it's not currently being drawn */}
+          {currentCard && !isDrawingCard ? (
             <Card
               cardData={currentCard}
               isFaceUp={true}
@@ -135,9 +162,9 @@ export function PokerTable({
               size="medium"
               animateCollect={animateCollect}
             />
-          ) : (
+          ) : !isDrawingCard ? (
             <div className="table-felt-logo">LOW SOCIETY</div>
-          )}
+          ) : null}
         </div>
 
         {/* Player seats */}

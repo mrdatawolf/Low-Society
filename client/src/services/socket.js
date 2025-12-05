@@ -7,10 +7,12 @@ class SocketService {
     this.listeners = new Map();
   }
 
-  connect(serverUrl = 'http://localhost:3003') {
+  connect(serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3003') {
     if (this.socket?.connected) {
       return this.socket;
     }
+
+    console.log('Connecting to server:', serverUrl);
 
     this.socket = io(serverUrl, {
       autoConnect: true,
