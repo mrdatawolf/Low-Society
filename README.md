@@ -61,13 +61,22 @@ Low-Society/
    cd Low-Society
    ```
 
-2. **Install server dependencies**
+2. **Set up configuration**
+   ```bash
+   # Copy the example config file
+   cp config.example.js config.js
+
+   # Edit config.js with your settings (optional for localhost)
+   # See LAN-SETUP.md or CLOUDFLARE-SETUP.md for network play
+   ```
+
+3. **Install server dependencies**
    ```bash
    cd server
    npm install
    ```
 
-3. **Install client dependencies**
+4. **Install client dependencies**
    ```bash
    cd ../client
    npm install
