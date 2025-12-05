@@ -124,6 +124,10 @@ class SocketService {
     return this.emit('execute_card_swap', { player1Id, card1Id, player2Id, card2Id });
   }
 
+  async discardLuxuryCard(cardId) {
+    return this.emit('discard_luxury_card', { cardId });
+  }
+
   async getState() {
     return this.emit('get_state', {});
   }

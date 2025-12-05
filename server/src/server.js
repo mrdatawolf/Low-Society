@@ -195,6 +195,30 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Discard luxury card (Repo Man)
+  socket.on('discard_luxury_card', ({ cardId }, callback) => {
+    try {
+      const roomCode = roomManager.getPlayerRoom(socket.id);
+      if (!roomCode) throw new Error('You are not in a room');
+
+      const game = roomManager.getGame(roomCode);
+      if (!game) throw new Error('Room not found');
+
+      game.discardLuxuryCard(socket.id, cardId);
+
+      // Notify all players
+      io.to(roomCode).emit('luxury_card_discarded', {
+        publicState: game.getPublicState(),
+        playerId: socket.id,
+        cardId
+      });
+
+      callback({ success: true });
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
   // Get current game state
   socket.on('get_state', (data, callback) => {
     try {

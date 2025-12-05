@@ -1,0 +1,12 @@
+{
+  "name": "low-society-integration-test",
+  "version": "1.0.0",
+  "description": "Automated integration testing for Low Society game",
+  "type": "module",
+  "scripts": {
+    "test": "node automated-game.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  }
+}

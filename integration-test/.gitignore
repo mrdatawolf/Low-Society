@@ -1,0 +1,8 @@
+node_modules/
+test-log.txt
+test-errors.txt
+test-aggregate.txt
+test-summary.txt
+test-continuous.log
+test-continuous-summary.txt
+*.log
