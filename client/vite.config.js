@@ -25,11 +25,26 @@ try {
 const serverUrl = process.env.VITE_SERVER_URL || config.client?.serverUrl || 'http://localhost:3003';
 console.log('Vite config - Server URL:', serverUrl);
 
+// Build allowedHosts list from config
+const allowedHosts = ['localhost'];
+if (config.cloudflare?.allowedDomain) {
+  allowedHosts.push(config.cloudflare.allowedDomain);
+}
+if (config.cloudflare?.clientUrl) {
+  try {
+    allowedHosts.push(new URL(config.cloudflare.clientUrl).hostname);
+  } catch (e) {
+    console.warn('Invalid clientUrl in config:', config.cloudflare.clientUrl);
+  }
+}
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: config.client?.port || 3004,
     host: config.client?.exposeToNetwork ? '0.0.0.0' : 'localhost',
+    // Allow access through Cloudflare tunnels and custom domains
+    allowedHosts: allowedHosts,
     proxy: {
       '/api': {
         target: serverUrl,

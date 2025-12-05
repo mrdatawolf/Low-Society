@@ -128,15 +128,23 @@ module.exports = {
     // After setting up Cloudflare Zero Trust tunnels, update these URLs
 
     // Server tunnel URL (backend/API)
-    // Example: 'https://lowsociety-server.yourdomain.com'
+    // Example: 'https://server.yourdomain.com'
     serverUrl: null,
 
     // Client tunnel URL (frontend)
-    // Example: 'https://lowsociety-client.yourdomain.com'
+    // Example: 'https://game.yourdomain.com'
     clientUrl: null,
+
+    // Your domain (for Vite allowedHosts)
+    // Use a wildcard to allow all subdomains: '.yourdomain.com'
+    // Or specify exact domain: 'game.yourdomain.com'
+    // Example: '.yourdomain.com'
+    allowedDomain: null,
 
     // Note: Make sure your tunnel is configured to forward to:
     // - Server tunnel → localhost:3003
     // - Client tunnel → localhost:3004
+    //
+    // IMPORTANT: After updating this config, restart the client for changes to take effect
   },
 };

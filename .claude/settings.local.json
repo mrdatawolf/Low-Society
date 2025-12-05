@@ -16,7 +16,8 @@
       "Bash(taskkill //F //PID 28216)",
       "Bash(npm start)",
       "Bash(taskkill:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm pkg set:*)"
     ],
     "deny": [],
     "ask": []
