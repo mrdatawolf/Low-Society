@@ -89,16 +89,18 @@ You need to run both the server and client in separate terminals.
 #### Terminal 1 - Start the Server
 ```bash
 cd server
-npm run dev
+npm start
 ```
 Server will run on `http://localhost:3003`
 
 #### Terminal 2 - Start the Client
 ```bash
 cd client
-npm run dev
+npm start
 ```
 Client will run on `http://localhost:3004`
+
+**Note:** Both server and client support `npm start` for consistency. You can also use `npm run dev` which is an alias.
 
 ### Playing the Game
 

@@ -133,9 +133,12 @@ module.exports = {
   cloudflare: {
     serverUrl: 'https://server.yourdomain.com',
     clientUrl: 'https://game.yourdomain.com',
+    allowedDomain: '.yourdomain.com', // IMPORTANT: Required for Vite to allow your domain
   },
 };
 ```
+
+**Important:** The `allowedDomain` field is required to allow Vite to accept requests from your Cloudflare domain. Use `.yourdomain.com` (with leading dot) to allow all subdomains, or specify the exact domain like `game.yourdomain.com`.
 
 ## Step 7: Set Environment Variable
 

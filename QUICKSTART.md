@@ -4,7 +4,16 @@ Get up and running with Low Society in 2 minutes!
 
 ## Install and Run (First Time)
 
-### 1. Install Dependencies
+### 1. Set Up Configuration
+
+```bash
+# Copy the example config (optional for localhost)
+cp config.example.js config.js
+```
+
+For localhost development, the default settings work fine. For LAN or remote play, see [CONFIGURATION.md](CONFIGURATION.md).
+
+### 2. Install Dependencies
 
 Open two terminal windows and run:
 
@@ -12,7 +21,7 @@ Open two terminal windows and run:
 ```bash
 cd server
 npm install
-npm run dev
+npm start
 ```
 Server will start on `http://localhost:3003`
 
@@ -20,11 +29,11 @@ Server will start on `http://localhost:3003`
 ```bash
 cd client
 npm install
-npm run dev
+npm start
 ```
-Client will start on `http://localhost:3004`
+Client will start on `http://localhost:3004` (or another port if 3004 is busy)
 
-### 2. Play the Game
+### 3. Play the Game
 
 1. Open your browser to `http://localhost:3004`
 2. Enter your name
@@ -37,15 +46,17 @@ Client will start on `http://localhost:3004`
 
 After the first install, just run:
 
-**Terminal 1:**
+**Terminal 1 (Server):**
 ```bash
-cd server && npm run dev
+cd server && npm start
 ```
 
-**Terminal 2:**
+**Terminal 2 (Client):**
 ```bash
-cd client && npm run dev
+cd client && npm start
 ```
+
+**Note:** You can also use `npm run dev` for either - it's an alias for `npm start`.
 
 ## Quick Reference
 

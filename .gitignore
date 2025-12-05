@@ -88,3 +88,4 @@ pids
 # Mac finder
 .AppleDouble
 .LSOverride
+/.claude
