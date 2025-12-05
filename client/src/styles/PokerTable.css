@@ -1,0 +1,308 @@
+/* ==========================================
+   PokerTable Component Styles
+   Top-down poker table view with positioned seats
+   ========================================== */
+
+.poker-table-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The poker table */
+.poker-table {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  height: 500px;
+  background:
+    radial-gradient(ellipse at center, #0a4d2e 0%, #083d24 100%);
+  border: 15px solid #8b4513;
+  border-radius: 50% / 40%;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.6),
+    inset 0 2px 20px rgba(0, 0, 0, 0.4),
+    inset 0 -2px 20px rgba(255, 255, 255, 0.05);
+  background-size: cover;
+  background-position: center;
+  animation: table-entrance 0.8s ease-out;
+}
+
+@keyframes table-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Table center area */
+.table-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.table-felt-logo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgba(212, 175, 55, 0.15);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 4px;
+  user-select: none;
+}
+
+/* Player seat positions */
+.player-seat {
+  position: absolute;
+  z-index: 10;
+}
+
+/* Seat position: Bottom (current player) */
+.seat-bottom {
+  bottom: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Seat position: Top */
+.seat-top {
+  top: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Seat position: Left */
+.seat-left {
+  left: -160px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Seat position: Right */
+.seat-right {
+  right: -160px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Seat position: Top-left */
+.seat-top-left {
+  top: -80px;
+  left: 0px;
+}
+
+/* Seat position: Top-right */
+.seat-top-right {
+  top: -80px;
+  right: 0px;
+}
+
+/* Responsive layout for tablets */
+@media (max-width: 1024px) {
+  .poker-table-container {
+    padding: 30px 15px;
+    min-height: 500px;
+  }
+
+  .poker-table {
+    height: 400px;
+    border-width: 12px;
+  }
+
+  .table-felt-logo {
+    font-size: 1.5rem;
+  }
+
+  .seat-bottom {
+    bottom: -120px;
+  }
+
+  .seat-top {
+    top: -120px;
+  }
+
+  .seat-left {
+    left: -140px;
+  }
+
+  .seat-right {
+    right: -140px;
+  }
+
+  .seat-top-left {
+    top: -60px;
+    left: 10px;
+  }
+
+  .seat-top-right {
+    top: -60px;
+    right: 10px;
+  }
+}
+
+/* Responsive layout for mobile */
+@media (max-width: 768px) {
+  .poker-table-container {
+    padding: 20px 10px;
+    min-height: 400px;
+  }
+
+  .poker-table {
+    height: 350px;
+    border-width: 10px;
+    border-radius: 50% / 35%;
+  }
+
+  .table-center {
+    width: 200px;
+    height: 150px;
+  }
+
+  .table-felt-logo {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+  }
+
+  /* Adjust seat positions for smaller screen */
+  .seat-bottom {
+    bottom: -100px;
+  }
+
+  .seat-top {
+    top: -100px;
+  }
+
+  .seat-left {
+    left: -120px;
+  }
+
+  .seat-right {
+    right: -120px;
+  }
+
+  .seat-top-left {
+    top: -50px;
+    left: 5px;
+  }
+
+  .seat-top-right {
+    top: -50px;
+    right: 5px;
+  }
+}
+
+/* Very small mobile screens - stack vertically */
+@media (max-width: 480px) {
+  .poker-table-container {
+    padding: 15px 5px;
+    min-height: auto;
+  }
+
+  .poker-table {
+    position: static;
+    height: auto;
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: linear-gradient(135deg, #0a4d2e 0%, #083d24 100%);
+  }
+
+  .table-center {
+    position: static;
+    transform: none;
+    width: 100%;
+    height: auto;
+    padding: 15px 0;
+  }
+
+  .table-felt-logo {
+    font-size: 1rem;
+  }
+
+  /* Stack all players vertically */
+  .player-seat {
+    position: static;
+    transform: none;
+    margin: 0 auto;
+  }
+
+  /* Current player at bottom */
+  .seat-bottom {
+    order: 5;
+  }
+
+  .seat-left {
+    order: 1;
+  }
+
+  .seat-top-left {
+    order: 2;
+  }
+
+  .seat-top {
+    order: 2;
+  }
+
+  .seat-top-right {
+    order: 3;
+  }
+
+  .seat-right {
+    order: 4;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .poker-table {
+    animation: none;
+  }
+}
+
+/* Empty seat indicators (for future lobby state) */
+.empty-seat {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px dashed var(--border-color);
+  background: rgba(58, 58, 58, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.empty-seat::before {
+  content: '+';
+}
+
+/* Table variants (for future custom tables) */
+.poker-table.high-roller {
+  background: radial-gradient(ellipse at center, #1a0a00 0%, #0d0500 100%);
+  border-color: #d4af37;
+}
+
+.poker-table.dive-bar {
+  background: radial-gradient(ellipse at center, #2d2424 0%, #1a1414 100%);
+  border-color: #4a4a4a;
+}

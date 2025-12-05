@@ -1,0 +1,523 @@
+/* ==========================================
+   Card Component Styles
+   Modular card with placeholder support
+   ========================================== */
+
+.card-component {
+  position: relative;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Card Reveal Animation - 3D Flip */
+.card-component.revealing {
+  animation: card-flip-reveal 1.6s ease-out forwards;
+}
+
+@keyframes card-flip-reveal {
+  0% {
+    transform: rotateY(180deg) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: rotateY(90deg) scale(1.1);
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Card Collection Animation - Move to Winner */
+.card-component.collecting {
+  animation: card-collect 1s ease-in-out forwards;
+}
+
+@keyframes card-collect {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(1.2) translateY(-20px);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(0.6) translateY(-40px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.3) translateY(-100px);
+    opacity: 0;
+  }
+}
+
+/* Card sizes */
+.card-component.tiny {
+  width: 30px;
+  height: 42px;
+}
+
+.card-component.small {
+  width: 60px;
+  height: 84px;
+}
+
+.card-component.medium {
+  width: 120px;
+  height: 168px;
+}
+
+.card-component.large {
+  width: 180px;
+  height: 252px;
+}
+
+/* Hover effect for clickable cards */
+.card-component[style*="cursor: pointer"]:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Card image (when using real assets) */
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card front placeholder */
+.card-front-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+  border: 4px solid var(--accent-primary);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Card type specific borders */
+.card-front-placeholder[style*="border-color: rgb(34, 139, 34)"],
+.card-front-placeholder[style*="border-color: #228b22"] {
+  /* Luxury - green */
+  border-color: var(--success-color) !important;
+  box-shadow: 0 0 8px rgba(34, 139, 34, 0.3);
+}
+
+.card-front-placeholder[style*="border-color: rgb(212, 175, 55)"],
+.card-front-placeholder[style*="border-color: #d4af37"] {
+  /* Prestige - gold */
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+.card-front-placeholder[style*="border-color: rgb(196, 30, 58)"],
+.card-front-placeholder[style*="border-color: #c41e3a"] {
+  /* Disgrace - red */
+  border-color: var(--danger-color) !important;
+  box-shadow: 0 0 8px rgba(196, 30, 58, 0.3);
+}
+
+.card-front-placeholder[style*="border-color: rgb(139, 71, 137)"],
+.card-front-placeholder[style*="border-color: #8b4789"] {
+  /* Special - purple */
+  border-color: #8b4789 !important;
+  box-shadow: 0 0 8px rgba(139, 71, 137, 0.3);
+}
+
+/* Card type indicator (top corner) */
+.card-type-indicator {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+}
+
+.card-type-indicator.badge-luxury {
+  background: var(--success-color);
+}
+
+.card-type-indicator.badge-prestige {
+  background: var(--accent-primary);
+  color: #000;
+}
+
+.card-type-indicator.badge-disgrace {
+  background: var(--danger-color);
+}
+
+.card-type-indicator.badge-special {
+  background: #8b4789;
+}
+
+/* Card content area */
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  flex: 1;
+}
+
+.card-name-mini {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #333;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
+}
+
+.card-value-large {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.card-multiplier {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+}
+
+.card-tap-hint {
+  position: absolute;
+  bottom: 5px;
+  font-size: 0.6rem;
+  color: #999;
+  opacity: 0.7;
+}
+
+/* Card back placeholder */
+.card-back-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2d2424 0%, #1a1414 100%);
+  border: 3px solid var(--accent-secondary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-back-pattern {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(139, 69, 19, 0.1) 10px, rgba(139, 69, 19, 0.1) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(212, 175, 55, 0.1) 10px, rgba(212, 175, 55, 0.1) 20px);
+}
+
+.back-logo {
+  font-size: 3rem;
+  font-weight: bold;
+  color: rgba(212, 175, 55, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 4px;
+}
+
+/* Size adjustments for tiny cards */
+.card-component.tiny .card-type-indicator {
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
+  top: 2px;
+  left: 2px;
+}
+
+.card-component.tiny .card-name-mini {
+  font-size: 0.35rem;
+  -webkit-line-clamp: 1;
+}
+
+.card-component.tiny .card-value-large {
+  font-size: 1rem;
+}
+
+.card-component.tiny .card-multiplier {
+  font-size: 0.7rem;
+}
+
+.card-component.tiny .back-logo {
+  font-size: 1rem;
+}
+
+.card-component.tiny .card-tap-hint {
+  display: none;
+}
+
+.card-component.tiny .card-front-placeholder {
+  border: 2px solid var(--accent-primary);
+}
+
+/* Size adjustments for small cards */
+.card-component.small .card-type-indicator {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  top: 3px;
+  left: 3px;
+}
+
+.card-component.small .card-name-mini {
+  font-size: 0.5rem;
+  -webkit-line-clamp: 2;
+}
+
+.card-component.small .card-value-large {
+  font-size: 1.5rem;
+}
+
+.card-component.small .card-multiplier {
+  font-size: 1rem;
+}
+
+.card-component.small .back-logo {
+  font-size: 1.5rem;
+}
+
+.card-component.small .card-tap-hint {
+  display: none;
+}
+
+/* Size adjustments for large cards */
+.card-component.large .card-type-indicator {
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  top: 8px;
+  left: 8px;
+}
+
+.card-component.large .card-name-mini {
+  font-size: 1rem;
+}
+
+.card-component.large .card-value-large {
+  font-size: 4rem;
+}
+
+.card-component.large .card-multiplier {
+  font-size: 2.5rem;
+}
+
+.card-component.large .back-logo {
+  font-size: 5rem;
+}
+
+/* ==========================================
+   Card Modal Styles
+   ========================================== */
+
+.card-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.2s ease-out;
+  padding: 20px;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.card-modal-content {
+  background: var(--bg-card);
+  border: 5px solid var(--accent-primary);
+  border-radius: 15px;
+  padding: 30px;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+  animation: modal-slide-up 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--danger-color);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close-btn:hover {
+  background: #a01828;
+  transform: rotate(90deg);
+}
+
+.card-type-badge {
+  display: inline-block;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.modal-card-name {
+  font-size: 2rem;
+  color: var(--accent-primary);
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modal-card-description {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.modal-card-value,
+.modal-card-multiplier {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+.value-label,
+.multiplier-label {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.value-number,
+.multiplier-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+}
+
+.modal-effect {
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-size: 1.1rem;
+}
+
+.modal-effect.danger {
+  background: rgba(196, 30, 58, 0.1);
+  border: 2px solid var(--danger-color);
+  color: var(--danger-color);
+}
+
+.modal-effect.special {
+  background: rgba(139, 71, 137, 0.1);
+  border: 2px solid #8b4789;
+  color: #bb95e6;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+  .card-modal-content {
+    padding: 20px;
+    max-width: 90%;
+  }
+
+  .modal-card-name {
+    font-size: 1.5rem;
+  }
+
+  .modal-card-description {
+    font-size: 1rem;
+  }
+
+  .value-number,
+  .multiplier-number {
+    font-size: 2rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .card-component {
+    transition: none;
+  }
+
+  .card-component:hover {
+    transform: none;
+  }
+
+  .card-modal-overlay,
+  .card-modal-content {
+    animation: none;
+  }
+
+  .modal-close-btn:hover {
+    transform: none;
+  }
+}

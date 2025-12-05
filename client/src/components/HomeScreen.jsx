@@ -1,9 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import '../styles/HomeScreen.css';
 
 export function HomeScreen({ onCreateRoom, onJoinRoom, error }) {
-  const [playerName, setPlayerName] = useState('');
+  // Load player name from localStorage on mount
+  const [playerName, setPlayerName] = useState(() => {
+    return localStorage.getItem('lowSocietyPlayerName') || '';
+  });
   const [roomCode, setRoomCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const roomCodeInputRef = useRef(null);
+
+  // Save player name to localStorage whenever it changes
+  useEffect(() => {
+    if (playerName.trim()) {
+      localStorage.setItem('lowSocietyPlayerName', playerName.trim());
+    }
+  }, [playerName]);
+
+  // Focus room code input when joining mode is activated
+  useEffect(() => {
+    if (isJoining && roomCodeInputRef.current) {
+      roomCodeInputRef.current.focus();
+    }
+  }, [isJoining]);
 
   const handleCreateRoom = () => {
     if (playerName.trim()) {
@@ -57,6 +76,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, error }) {
             <div className="input-group">
               <label>Room Code:</label>
               <input
+                ref={roomCodeInputRef}
                 type="text"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
@@ -90,7 +110,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, error }) {
       {error && <div className="error-message">{error}</div>}
 
       <div style={{ marginTop: '60px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-        <p>A white trash twist on the classic High Society</p>
+        <p>A white trash game</p>
         <p>3-5 players • Bid with food stamps • Collect trailer park treasures</p>
       </div>
     </div>
