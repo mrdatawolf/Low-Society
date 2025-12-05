@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import { PokerTable } from './ui/PokerTable';
+import { Card } from './ui/Card';
+import { MoneyHand } from './ui/FoodStampBills';
+import { AuctionTypeBanner, PawnShopTradeOverlay, RepoManOverlay, TurnIndicator } from './ui/PhaseOverlay';
+import '../styles/FoodStampBills.css';
+import '../styles/PhaseOverlay.css';
 
 export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
@@ -37,23 +43,6 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const handlePass = () => {
     setSelectedMoney([]);
     onPass();
-  };
-
-  const getCardTypeBadge = (card) => {
-    const typeMap = {
-      luxury: 'badge-luxury',
-      prestige: 'badge-prestige',
-      disgrace: 'badge-disgrace',
-      special: 'badge-special'
-    };
-    return typeMap[card.type] || 'badge-luxury';
-  };
-
-  const getAuctionTypeText = () => {
-    if (!gameState.currentAuction) return '';
-    return gameState.currentAuction.type === 'reverse'
-      ? 'BIDDING TO AVOID'
-      : 'BIDDING TO WIN';
   };
 
   // Card swap handlers
@@ -127,14 +116,24 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
             <span className="info-label">Cards Left</span>
             <span className="info-value">{gameState.cardsRemaining}/15</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Auction Type</span>
-            <span className="info-value" style={{
-              color: gameState.currentAuction?.type === 'reverse' ? 'var(--danger-color)' : 'var(--success-color)'
-            }}>
-              {getAuctionTypeText()}
-            </span>
-          </div>
+          {gameState.currentAuction && (
+            <>
+              <div className="info-item">
+                <span className="info-label">Auction</span>
+                <span className="info-value" style={{
+                  color: gameState.currentAuction.type === 'reverse' ? 'var(--danger-color)' : 'var(--success-color)'
+                }}>
+                  {gameState.currentAuction.type === 'reverse' ? '⚠️ Avoid' : '✨ Win'}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Highest Bid</span>
+                <span className="info-value" style={{ color: 'var(--accent-primary)', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  ${gameState.currentAuction.highestBid}
+                </span>
+              </div>
+            </>
+          )}
         </div>
         <button className="btn btn-danger" onClick={onLeaveRoom}>
           Leave Game
@@ -142,104 +141,60 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
       </div>
 
       <div className="game-board">
-        {/* Players List */}
-        <div className="players-area">
-          <h3>Players</h3>
-          {gameState.players.map((player) => (
-            <div
-              key={player.id}
-              className={`player-status ${
-                !player.hasPassed ? 'active-player' : 'passed-player'
-              }`}
-            >
-              <div className="player-status-header">
-                <span className="player-name">
-                  {player.name}
-                  {player.id === myPlayerId && ' (You)'}
-                  {gameState.currentAuction?.currentTurnPlayerId === player.id && !player.hasPassed && (
-                    <span style={{ color: 'var(--accent-primary)', marginLeft: '8px', fontSize: '0.9rem' }}>
-                      ← TURN
+        {/* Player Cards Display - Show won cards with swap functionality */}
+        <div className="players-cards-area">
+          <h3>Player Cards</h3>
+          {gameState.players.some(p => p.wonCards.length > 0) ? (
+            gameState.players.map((player) => (
+              player.wonCards.length > 0 && (
+                <div key={player.id} className="player-cards-section">
+                  <div className="player-cards-header">
+                    <span className="player-name">
+                      {player.name}
+                      {player.id === myPlayerId && ' (You)'}
                     </span>
-                  )}
-                </span>
-                {player.hasPassed && (
-                  <span style={{ color: 'var(--danger-color)', fontWeight: 'bold' }}>
-                    PASSED
-                  </span>
-                )}
-              </div>
-              <div className="player-stats">
-                <span>💵 ${player.remainingMoney}</span>
-                <span>🎯 Bid: ${player.currentBidTotal}</span>
-                <span>🏆 Cards: {player.wonCardsCount}</span>
-              </div>
-              {player.wonCards.length > 0 && (
-                <div className="won-cards">
-                  {player.wonCards.map((card) => (
-                    <div
-                      key={card.id}
-                      className={`won-card-mini ${
-                        isSwapWinner && isCardSelected(player.id, card.id) ? 'selected-swap' : ''
-                      } ${isSwapWinner ? 'clickable' : ''}`}
-                      onClick={() => handleCardClick(player.id, card.id)}
-                      style={{
-                        cursor: isSwapWinner ? 'pointer' : 'default',
-                        border: isCardSelected(player.id, card.id) ? '2px solid var(--accent-primary)' : ''
-                      }}
-                    >
-                      {card.name} {card.value && `(${card.value})`}
-                    </div>
-                  ))}
+                    <span className="cards-count">🏆 {player.wonCardsCount}</span>
+                  </div>
+                  <div className="won-cards">
+                    {player.wonCards.map((card) => (
+                      <div
+                        key={card.id}
+                        onClick={() => isSwapWinner && handleCardClick(player.id, card.id)}
+                        style={{
+                          cursor: isSwapWinner ? 'pointer' : 'default',
+                          outline: isCardSelected(player.id, card.id) ? '3px solid var(--accent-primary)' : 'none',
+                          outlineOffset: '2px',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        <Card
+                          cardData={card}
+                          isFaceUp={true}
+                          showModal={!isSwapWinner}
+                          size="tiny"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+              )
+            ))
+          ) : (
+            <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center' }}>
+              No cards won yet
+            </p>
+          )}
         </div>
 
-        {/* Current Card */}
-        <div className="current-card-area">
-          {gameState.currentCard ? (
-            <div className="current-card">
-              <div className={`card-type-badge ${getCardTypeBadge(gameState.currentCard)}`}>
-                {gameState.currentCard.type}
-              </div>
-              <h2 className="card-name">{gameState.currentCard.name}</h2>
-              <p className="card-description">{gameState.currentCard.description}</p>
-              {gameState.currentCard.value && (
-                <div className="card-value">{gameState.currentCard.value}</div>
-              )}
-              {gameState.currentCard.effect === 'faux-pas' && (
-                <p style={{ color: 'var(--danger-color)', marginTop: '10px' }}>
-                  Discard one luxury item!
-                </p>
-              )}
-              {gameState.currentCard.effect === 'passe' && (
-                <p style={{ color: 'var(--danger-color)', marginTop: '10px' }}>
-                  -5 Status Points
-                </p>
-              )}
-              {gameState.currentCard.effect === 'scandale' && (
-                <p style={{ color: 'var(--danger-color)', marginTop: '10px' }}>
-                  Halves Your Status!
-                </p>
-              )}
-              {gameState.currentCard.multiplier && (
-                <p style={{ color: 'var(--accent-primary)', marginTop: '10px', fontSize: '1.5rem' }}>
-                  {gameState.currentCard.multiplier}x Multiplier
-                </p>
-              )}
-              {gameState.currentAuction && (
-                <div style={{ marginTop: '20px' }}>
-                  <p style={{ color: 'var(--text-secondary)' }}>Current Highest Bid:</p>
-                  <p style={{ fontSize: '2rem', color: 'var(--accent-primary)' }}>
-                    ${gameState.currentAuction.highestBid}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ color: 'var(--text-secondary)' }}>Waiting for next card...</p>
-          )}
+        {/* Poker Table with Players */}
+        <div className="poker-table-section">
+          <PokerTable
+            players={gameState.players}
+            currentPlayerId={myPlayerId}
+            currentTurnPlayerId={gameState.currentAuction?.currentTurnPlayerId}
+            currentCard={gameState.currentCard}
+            cardsRemaining={gameState.cardsRemaining || 0}
+          />
         </div>
 
         {/* Money Hand / Card Swap Control / Discard Control */}
@@ -257,18 +212,20 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
                     {myLuxuryCards.map((card) => (
                       <div
                         key={card.id}
-                        className={`won-card-mini clickable ${
-                          selectedDiscardCard === card.id ? 'selected-swap' : ''
-                        }`}
                         onClick={() => handleLuxuryCardClick(card.id)}
                         style={{
                           cursor: 'pointer',
-                          border: selectedDiscardCard === card.id ? '2px solid var(--danger-color)' : '',
-                          padding: '8px',
-                          marginBottom: '5px'
+                          outline: selectedDiscardCard === card.id ? '3px solid var(--danger-color)' : 'none',
+                          outlineOffset: '2px',
+                          borderRadius: '8px'
                         }}
                       >
-                        {card.name} ({card.value})
+                        <Card
+                          cardData={card}
+                          isFaceUp={true}
+                          showModal={false}
+                          size="small"
+                        />
                       </div>
                     ))}
                   </div>
@@ -342,21 +299,11 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
                   Lost at start: ${privateState.removedBill.value}
                 </p>
               )}
-              <div className="money-cards">
-                {privateState.moneyHand.map((moneyCard) => (
-                  <div
-                    key={moneyCard.id}
-                    className={`money-card ${
-                      !moneyCard.available ? 'disabled' : ''
-                    } ${
-                      selectedMoney.includes(moneyCard.id) ? 'selected' : ''
-                    }`}
-                    onClick={() => handleMoneyClick(moneyCard)}
-                  >
-                    ${moneyCard.value}
-                  </div>
-                ))}
-              </div>
+              <MoneyHand
+                moneyCards={privateState.moneyHand}
+                onMoneyClick={handleMoneyClick}
+                selectedMoney={selectedMoney}
+              />
               {isMyTurn && (
                 <>
                   <div className="bid-total">
@@ -398,6 +345,26 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
           )}
         </div>
       </div>
+
+      {/* Phase Overlays */}
+      <AuctionTypeBanner
+        auctionType={gameState.currentAuction?.type}
+        visible={!!gameState.currentAuction && !isCardSwapPhase && !isDiscardLuxuryPhase}
+      />
+
+      <PawnShopTradeOverlay
+        visible={isCardSwapPhase}
+      />
+
+      <RepoManOverlay
+        visible={isDiscardLuxuryPhase}
+        playerName={gameState.players.find(p => p.id === gameState.discardingPlayerId)?.name || 'Player'}
+      />
+
+      <TurnIndicator
+        playerName={gameState.players.find(p => p.id === gameState.currentAuction?.currentTurnPlayerId)?.name || 'Waiting'}
+        isMyTurn={isMyTurn}
+      />
     </div>
   );
 }

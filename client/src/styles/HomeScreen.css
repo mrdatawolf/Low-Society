@@ -1,0 +1,399 @@
+/* ==========================================
+   Home Screen - Animated Landing Page
+   Phase 1: Landing Page Enhancement
+   ========================================== */
+
+/* Animated Background */
+.home-screen {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Full viewport animated background */
+.home-screen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: linear-gradient(
+    135deg,
+    #1a1a1a 0%,
+    #2d2424 25%,
+    #2a2a2a 50%,
+    #1f2d1f 75%,
+    #1a1a1a 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Floating shapes for visual interest */
+.home-screen::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 69, 19, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(74, 124, 78, 0.05) 0%, transparent 50%);
+  animation: shapes-float 20s ease-in-out infinite;
+}
+
+/* Gradient animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Shapes floating animation */
+@keyframes shapes-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(10px, -10px) scale(1.05);
+  }
+  50% {
+    transform: translate(-10px, 10px) scale(0.95);
+  }
+  75% {
+    transform: translate(10px, 10px) scale(1.02);
+  }
+}
+
+/* Title Animations */
+.game-title {
+  font-size: 3.5rem;
+  color: var(--accent-primary);
+  text-shadow:
+    3px 3px 0 var(--accent-secondary),
+    0 0 20px rgba(212, 175, 55, 0.3);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  animation: title-entrance 1s ease-out;
+  position: relative;
+}
+
+@keyframes title-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.8);
+  }
+  60% {
+    transform: translateY(10px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Subtitle Animation */
+.game-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  font-style: italic;
+  animation: fade-in-up 1s ease-out 0.3s both;
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Input Section Animation */
+.name-input-section {
+  margin-bottom: 40px;
+  animation: fade-in-up 1s ease-out 0.5s both;
+  width: 100%;
+}
+
+/* Enhanced Input Styling */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: color 0.3s ease;
+}
+
+.input-group input {
+  padding: 15px;
+  font-size: 1.1rem;
+  border: 3px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: 'Arial', sans-serif;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 0 0 3px rgba(212, 175, 55, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.input-group input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Button Group Animation */
+.button-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fade-in-up 1s ease-out 0.7s both;
+}
+
+/* Enhanced Button Effects */
+.btn {
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  font-family: 'Arial Black', sans-serif;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: #000;
+  box-shadow: 0 4px 0 var(--accent-secondary), 0 6px 20px rgba(212, 175, 55, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 0 var(--accent-secondary), 0 10px 30px rgba(212, 175, 55, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-secondary), 0 4px 10px rgba(212, 175, 55, 0.2);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 3px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--border-color);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Error Message Animation */
+.error-message {
+  color: var(--danger-color);
+  padding: 15px;
+  background: rgba(196, 30, 58, 0.1);
+  border: 2px solid var(--danger-color);
+  border-radius: 5px;
+  margin: 20px 0;
+  animation: shake 0.5s ease-in-out, fade-in 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Info Text Animation */
+.home-screen > div:last-child {
+  animation: fade-in-up 1s ease-out 0.9s both;
+}
+
+/* Room Code Input Special Styling */
+.input-group input[maxlength="4"] {
+  text-align: center;
+  letter-spacing: 8px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background: var(--bg-secondary);
+  border-width: 4px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .game-title {
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 0 var(--accent-secondary);
+  }
+
+  .game-subtitle {
+    font-size: 1rem;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-screen {
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-title {
+    font-size: 2rem;
+  }
+
+  .input-group input {
+    font-size: 1rem;
+    padding: 12px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .home-screen::before,
+  .home-screen::after {
+    animation: none;
+  }
+
+  .game-title,
+  .game-subtitle,
+  .name-input-section,
+  .button-group,
+  .home-screen > div:last-child {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .btn {
+    transition: opacity 0.2s;
+  }
+
+  .error-message {
+    animation: fade-in 0.3s ease-out;
+  }
+}
+
+/* Loading State (optional enhancement) */
+.btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,202 @@
+/* ==========================================
+   Food Stamp Bills Styles
+   Themed money visuals for Low Society
+   ========================================== */
+
+/* Money Hand Container */
+.money-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+}
+
+.money-hand.empty {
+  opacity: 0.6;
+}
+
+.empty-message {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Money Card Wrapper */
+.money-card-wrapper {
+  transition: transform 0.2s ease;
+}
+
+.money-card-wrapper:hover {
+  transform: translateY(-3px);
+}
+
+.food-stamp-bill {
+  transition: all 0.2s ease;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.food-stamp-bill:hover {
+  filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.4));
+}
+
+.food-stamp-bill.selected {
+  animation: bill-pulse 0.5s ease-in-out;
+}
+
+.food-stamp-bill.unavailable {
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
+
+@keyframes bill-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Bid Pot Styles */
+.bid-pot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-primary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.bid-pot-bills {
+  position: relative;
+  height: 50px;
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bid-pot-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bid-player {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.bid-total {
+  font-size: 1.2rem;
+  color: var(--accent-primary);
+  font-weight: bold;
+}
+
+/* Money Display (for stats) */
+.money-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.money-display.empty {
+  opacity: 0.6;
+}
+
+.money-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.money-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.money-amount {
+  font-size: 1rem;
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+/* Bid Animation when placing */
+.bid-animation {
+  animation: fly-to-center 0.6s ease-out forwards;
+}
+
+@keyframes fly-to-center {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--target-x), var(--target-y)) scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--target-x), var(--target-y)) scale(0.6);
+    opacity: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .money-hand {
+    gap: 6px;
+    padding: 8px;
+    min-height: 50px;
+  }
+
+  .bid-pot {
+    padding: 8px;
+  }
+
+  .bid-pot-bills {
+    height: 40px;
+    width: 80px;
+  }
+
+  .bid-total {
+    font-size: 1rem;
+  }
+
+  .money-display {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .money-card-wrapper:hover {
+    transform: none;
+  }
+
+  .food-stamp-bill.selected {
+    animation: none;
+  }
+
+  .bid-animation {
+    animation: none;
+  }
+}

@@ -13,7 +13,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(taskkill /F /PID 28216)",
-      "Bash(taskkill //F //PID 28216)"
+      "Bash(taskkill //F //PID 28216)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

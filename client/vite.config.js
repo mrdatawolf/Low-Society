@@ -1,13 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load config
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const configPath = join(__dirname, '..', 'config.js');
+let config;
+try {
+  const configContent = readFileSync(configPath, 'utf8');
+  const match = configContent.match(/module\.exports\s*=\s*(\{[\s\S]*\});/);
+  if (match) {
+    config = eval('(' + match[1] + ')');
+  } else {
+    config = { client: { port: 3004 }, server: { port: 3003 } };
+  }
+} catch (error) {
+  console.warn('Could not load config.js, using defaults');
+  config = { client: { port: 3004 }, server: { port: 3003 } };
+}
+
+// Get server URL for proxy (for API calls)
+const serverUrl = process.env.VITE_SERVER_URL || config.client?.serverUrl || 'http://localhost:3003';
+console.log('Vite config - Server URL:', serverUrl);
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3004,
+    port: config.client?.port || 3004,
+    host: config.client?.exposeToNetwork ? '0.0.0.0' : 'localhost',
     proxy: {
       '/api': {
-        target: 'http://localhost:3003',
+        target: serverUrl,
         changeOrigin: true
       }
     }

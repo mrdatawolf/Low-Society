@@ -1,0 +1,206 @@
+/* ==========================================
+   Card Deck Styles
+   Visual deck stack and draw animation
+   ========================================== */
+
+.card-deck-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Card Deck Stack */
+.card-deck-stack {
+  position: relative;
+  width: 120px;
+  height: 168px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Individual cards in the stack */
+.deck-card-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(
+    calc(var(--layer-index) * 2px),
+    calc(var(--layer-index) * -2px)
+  );
+  filter: brightness(calc(1 - var(--layer-index) * 0.05));
+  transition: transform 0.3s ease;
+}
+
+.card-deck-stack:hover .deck-card-layer {
+  transform: translate(
+    calc(var(--layer-index) * 3px),
+    calc(var(--layer-index) * -3px)
+  );
+}
+
+/* Empty deck state */
+.empty-deck {
+  width: 120px;
+  height: 168px;
+  border: 3px dashed var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  opacity: 0.5;
+}
+
+.empty-deck-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Deck counter */
+.deck-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.deck-counter-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  line-height: 1;
+}
+
+.deck-counter-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Drawing Card Animation */
+.drawing-card-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  pointer-events: none;
+  animation: card-draw-from-deck 2s ease-out forwards;
+}
+
+@keyframes card-draw-from-deck {
+  0% {
+    transform: translate(0, 0) rotateY(180deg) scale(1);
+    opacity: 1;
+  }
+  25% {
+    /* Lift off deck */
+    transform: translate(20px, -30px) rotateY(180deg) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    /* Move to center and start flipping */
+    transform: translate(200px, -20px) rotateY(90deg) scale(1.2);
+    opacity: 1;
+  }
+  75% {
+    /* Continue flip */
+    transform: translate(220px, 0) rotateY(45deg) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    /* Land on table face-up */
+    transform: translate(240px, 0) rotateY(0deg) scale(1);
+    opacity: 0; /* Fade out as real card takes over */
+  }
+}
+
+/* Pulse animation for deck when it's your turn */
+.card-deck-container.active {
+  animation: deck-pulse 2s ease-in-out infinite;
+}
+
+@keyframes deck-pulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-deck-stack {
+    width: 90px;
+    height: 126px;
+  }
+
+  .empty-deck {
+    width: 90px;
+    height: 126px;
+  }
+
+  .deck-counter-number {
+    font-size: 1.2rem;
+  }
+
+  .deck-counter-label {
+    font-size: 0.6rem;
+  }
+
+  @keyframes card-draw-from-deck {
+    0% {
+      transform: translate(0, 0) rotateY(180deg) scale(0.75);
+      opacity: 1;
+    }
+    25% {
+      transform: translate(15px, -20px) rotateY(180deg) scale(0.85);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(120px, -15px) rotateY(90deg) scale(0.9);
+      opacity: 1;
+    }
+    75% {
+      transform: translate(140px, 0) rotateY(45deg) scale(0.85);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(160px, 0) rotateY(0deg) scale(0.75);
+      opacity: 0;
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .deck-card-layer {
+    transition: none;
+  }
+
+  .card-deck-stack:hover .deck-card-layer {
+    transform: translate(
+      calc(var(--layer-index) * 2px),
+      calc(var(--layer-index) * -2px)
+    );
+  }
+
+  .drawing-card-animation {
+    animation: none;
+    opacity: 0;
+  }
+
+  .card-deck-container.active {
+    animation: none;
+  }
+}

@@ -3,21 +3,56 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { roomManager } from './services/roomManager.js';
 import { GAME_PHASES } from './models/game.js';
+
+// Load config
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const configPath = join(__dirname, '..', '..', 'config.js');
+let config;
+try {
+  // Read as CommonJS module
+  const configContent = readFileSync(configPath, 'utf8');
+  // Simple eval to get the config (since it's a CommonJS module.exports)
+  const match = configContent.match(/module\.exports\s*=\s*(\{[\s\S]*\});/);
+  if (match) {
+    config = eval('(' + match[1] + ')');
+  } else {
+    throw new Error('Could not parse config file');
+  }
+} catch (error) {
+  console.error('Warning: Could not load config.js, using defaults:', error.message);
+  config = {
+    server: { port: 3003, host: '0.0.0.0', corsOrigins: '*' },
+    game: { minPlayers: 3, maxPlayers: 5, startingMoney: 40, deckSize: 15 }
+  };
+}
+
+console.log('Server configuration:', {
+  host: config.server.host,
+  port: config.server.port,
+  cors: config.server.corsOrigins
+});
 
 const app = express();
 const httpServer = createServer(app);
 
-// Configure CORS
-app.use(cors());
+// Configure CORS based on config
+app.use(cors({
+  origin: config.server.corsOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
-// Socket.io setup
+// Socket.io setup with configured CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: config.server.corsOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -277,10 +312,12 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3003;
-httpServer.listen(PORT, () => {
-  console.log(`Low Society server running on port ${PORT}`);
+const PORT = process.env.PORT || config.server.port;
+const HOST = config.server.host || '0.0.0.0';
+httpServer.listen(PORT, HOST, () => {
+  console.log(`Low Society server running on ${HOST}:${PORT}`);
   console.log(`WebSocket server ready for connections`);
+  console.log(`Game settings: ${config.game.minPlayers}-${config.game.maxPlayers} players, $${config.game.startingMoney} starting money`);
 });
 
 export { app, io };
