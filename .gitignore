@@ -27,3 +27,4 @@ coverage/
 Thumbs.db
 /.claude
 .claude/settings.local.json
+.claude/settings.local.json
