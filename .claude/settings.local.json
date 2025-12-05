@@ -4,7 +4,16 @@
       "Bash(mkdir:*)",
       "Bash(npm test:*)",
       "Bash(timeout 30 npm test:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(cat:*)",
+      "Bash(node verify-deck.js:*)",
+      "Bash(node verify-swap-position.js:*)",
+      "Bash(node test-full-deck.js:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill /F /PID 28216)",
+      "Bash(taskkill //F //PID 28216)"
     ],
     "deny": [],
     "ask": []
