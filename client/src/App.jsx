@@ -23,6 +23,8 @@ function App() {
   const [privateState, setPrivateState] = useState(null);
   const [error, setError] = useState('');
   const [showRules, setShowRules] = useState(false);
+  const [roundReset, setRoundReset] = useState(null);
+  const [gameDisconnected, setGameDisconnected] = useState(false);
 
   useEffect(() => {
     // Connect to server
@@ -64,6 +66,17 @@ function App() {
 
     socketService.on('luxury_card_discarded', ({ publicState }) => {
       setGameState(publicState);
+    });
+
+    socketService.on('player_disconnected', ({ publicState }) => {
+      setGameState(publicState);
+      setGameDisconnected(true);
+    });
+
+    socketService.on('round_reset', ({ playerName }) => {
+      setRoundReset({ playerName, timestamp: Date.now() });
+      // Clear disconnected state when round resets (player rejoined)
+      setGameDisconnected(false);
     });
 
     // Clean up on unmount
@@ -218,6 +231,8 @@ function App() {
           onExecuteCardSwap={handleExecuteCardSwap}
           onDiscardLuxuryCard={handleDiscardLuxuryCard}
           onLeaveRoom={handleLeaveRoom}
+          roundReset={roundReset}
+          gameDisconnected={gameDisconnected}
         />
       )}
 
