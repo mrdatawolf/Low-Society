@@ -61,6 +61,12 @@ class RoomManager {
     // Check if this is a rejoin attempt (same name, game in progress)
     // Use case-insensitive comparison
     const existingPlayer = game.players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+
+    // If game is in progress and this is NOT a rejoin, prevent joining
+    if (!existingPlayer && game.phase !== GAME_PHASES.WAITING) {
+      throw new Error('Game already in progress');
+    }
+
     if (existingPlayer && game.phase !== GAME_PHASES.WAITING) {
       // Allow rejoin - update the player's socket ID
       console.log(`${playerName} rejoining room ${roomCode} (old: ${existingPlayer.id}, new: ${playerId})`);
@@ -102,14 +108,16 @@ class RoomManager {
 
       // Restart the current auction to ensure clean state
       console.log(`Rejoin - Game phase: ${game.phase}, Has auction: ${!!game.currentAuction}`);
+      let roundWasReset = false;
       if (game.phase === 'auction') {
         game.restartCurrentAuction();
+        roundWasReset = true;
         console.log(`Auction restarted due to ${playerName} rejoining`);
         console.log(`After restart - Turn player: ${game.currentAuction?.currentTurnPlayerId}`);
       }
 
       console.log(`${playerName} (${playerId}) rejoined room ${roomCode}`);
-      return game;
+      return { game, roundWasReset };
     }
 
     // Add player to game
@@ -118,7 +126,7 @@ class RoomManager {
 
     console.log(`${playerName} (${playerId}) joined room ${roomCode}`);
 
-    return game;
+    return { game, roundWasReset: false };
   }
 
   // Leave a room

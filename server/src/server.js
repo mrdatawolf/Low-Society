@@ -136,10 +136,17 @@ io.on('connection', (socket) => {
     try {
       const sanitizedCode = sanitizeRoomCode(roomCode);
       const sanitizedName = sanitizePlayerName(playerName);
-      const game = roomManager.joinRoom(sanitizedCode, socket.id, sanitizedName);
+      const { game, roundWasReset } = roomManager.joinRoom(sanitizedCode, socket.id, sanitizedName);
 
       // Join socket room
       socket.join(sanitizedCode);
+
+      // If round was reset due to rejoin, emit round_reset event
+      if (roundWasReset) {
+        io.to(sanitizedCode).emit('round_reset', {
+          playerName: sanitizedName
+        });
+      }
 
       // Broadcast updated state to ALL players
       // This ensures everyone has the updated player IDs and restarted auction if applicable

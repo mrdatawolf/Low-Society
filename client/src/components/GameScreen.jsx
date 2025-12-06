@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PokerTable } from './ui/PokerTable';
 import { Card } from './ui/Card';
 import { MoneyHand } from './ui/FoodStampBills';
@@ -6,15 +6,45 @@ import { PawnShopTradeOverlay, RepoManOverlay } from './ui/PhaseOverlay';
 import '../styles/FoodStampBills.css';
 import '../styles/PhaseOverlay.css';
 
-export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom }) {
+export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom, roundReset, gameDisconnected }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
   const [selectedSwapCards, setSelectedSwapCards] = useState([]);
   const [selectedDiscardCard, setSelectedDiscardCard] = useState(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [showResetMessage, setShowResetMessage] = useState(false);
 
   const myPlayer = gameState.players.find(p => p.id === myPlayerId);
   const isMyTurn = gameState.currentAuction?.currentTurnPlayerId === myPlayerId && !myPlayer?.hasPassed;
 
+  // Disable all interactions when game is disconnected
+  const isInteractionDisabled = gameDisconnected;
+
+  // Handle round reset animation
+  useEffect(() => {
+    if (roundReset) {
+      // Start fade out
+      setIsResetting(true);
+      setShowResetMessage(true);
+
+      // After fade out completes (500ms), fade back in
+      const fadeInTimer = setTimeout(() => {
+        setIsResetting(false);
+      }, 500);
+
+      // Hide reset message after 4 seconds total
+      const messageTimer = setTimeout(() => {
+        setShowResetMessage(false);
+      }, 4000);
+
+      return () => {
+        clearTimeout(fadeInTimer);
+        clearTimeout(messageTimer);
+      };
+    }
+  }, [roundReset?.timestamp]);
+
   const handleMoneyClick = (moneyCard) => {
+    if (isInteractionDisabled) return;
     if (!moneyCard.available || !isMyTurn) return;
 
     if (selectedMoney.includes(moneyCard.id)) {
@@ -34,6 +64,7 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   };
 
   const handlePlaceBid = () => {
+    if (isInteractionDisabled) return;
     if (selectedMoney.length > 0) {
       onPlaceBid(selectedMoney);
       setSelectedMoney([]);
@@ -41,6 +72,7 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   };
 
   const handlePass = () => {
+    if (isInteractionDisabled) return;
     setSelectedMoney([]);
     onPass();
   };
@@ -50,6 +82,7 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const isSwapWinner = isCardSwapPhase && gameState.currentAuction?.swapWinner === myPlayerId;
 
   const handleCardClick = (playerId, cardId) => {
+    if (isInteractionDisabled) return;
     if (!isSwapWinner) return;
 
     const selection = { playerId, cardId };
@@ -69,6 +102,7 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   };
 
   const handleConfirmSwap = () => {
+    if (isInteractionDisabled) return;
     if (selectedSwapCards.length === 2) {
       const [card1, card2] = selectedSwapCards;
       onExecuteCardSwap(card1.playerId, card1.cardId, card2.playerId, card2.cardId);
@@ -77,6 +111,7 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   };
 
   const handleSkipSwap = () => {
+    if (isInteractionDisabled) return;
     onExecuteCardSwap(null, null, null, null);
     setSelectedSwapCards([]);
   };
@@ -90,11 +125,13 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const isDiscardingPlayer = isDiscardLuxuryPhase && gameState.discardingPlayerId === myPlayerId;
 
   const handleLuxuryCardClick = (cardId) => {
+    if (isInteractionDisabled) return;
     if (!isDiscardingPlayer) return;
     setSelectedDiscardCard(cardId === selectedDiscardCard ? null : cardId);
   };
 
   const handleConfirmDiscard = () => {
+    if (isInteractionDisabled) return;
     if (selectedDiscardCard) {
       onDiscardLuxuryCard(selectedDiscardCard);
       setSelectedDiscardCard(null);
@@ -105,8 +142,22 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const myLuxuryCards = myPlayer?.wonCards.filter(c => c.type === 'luxury') || [];
 
   return (
-    <div className="game-screen">
+    <div className={`game-screen ${isResetting ? 'resetting' : ''} ${gameDisconnected ? 'disconnected' : ''}`}>
+      {gameDisconnected && (
+        <div className="disconnected-overlay">
+          <div className="disconnected-message">
+            <span className="disconnected-icon">⚠️</span>
+            <span className="disconnected-text">Player disconnected - Waiting for reconnection...</span>
+          </div>
+        </div>
+      )}
       <div className="game-header">
+        {showResetMessage && (
+          <div className="reset-message">
+            <span className="reset-icon">🔄</span>
+            <span className="reset-text">Round reset - {roundReset?.playerName} rejoined</span>
+          </div>
+        )}
         <div className="game-info">
           <div className="info-item">
             <span className="info-label">Room</span>

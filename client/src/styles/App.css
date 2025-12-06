@@ -230,6 +230,75 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: opacity 500ms ease-in-out;
+}
+
+.game-screen.resetting {
+  opacity: 0;
+}
+
+.game-screen.disconnected {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.game-screen.disconnected .btn-danger {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.disconnected-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.disconnected-message {
+  background: var(--danger-color);
+  color: white;
+  padding: 20px 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.disconnected-icon {
+  font-size: 2rem;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.disconnected-text {
+  font-size: 1rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .game-header {
@@ -241,6 +310,55 @@ body {
   background: var(--bg-card);
   border-bottom: 3px solid var(--border-color);
   flex-shrink: 0;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.reset-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--accent-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideInDown 500ms ease-out;
+  font-weight: bold;
+}
+
+.reset-icon {
+  font-size: 1.5rem;
+  animation: spin 1s ease-in-out;
+}
+
+.reset-text {
+  font-size: 0.95rem;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translate(-50%, -150%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .game-header .btn-danger {

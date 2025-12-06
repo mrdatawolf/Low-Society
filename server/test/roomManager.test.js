@@ -40,18 +40,20 @@ describe('RoomManager', () => {
   describe('Joining Rooms', () => {
     test('should join existing room', () => {
       const { roomCode } = roomManager.createRoom('player1', 'Alice');
-      const game = roomManager.joinRoom(roomCode, 'player2', 'Bob');
+      const { game, roundWasReset } = roomManager.joinRoom(roomCode, 'player2', 'Bob');
 
       expect(game.players).toHaveLength(2);
+      expect(roundWasReset).toBe(false);
       expect(roomManager.getPlayerRoom('player2')).toBe(roomCode);
     });
 
     test('should be case insensitive', () => {
       const { roomCode } = roomManager.createRoom('player1', 'Alice');
-      const game = roomManager.joinRoom(roomCode.toLowerCase(), 'player2', 'Bob');
+      const { game, roundWasReset } = roomManager.joinRoom(roomCode.toLowerCase(), 'player2', 'Bob');
 
       expect(game).toBeDefined();
       expect(game.players).toHaveLength(2);
+      expect(roundWasReset).toBe(false);
     });
 
     test('should throw error for non-existent room', () => {
