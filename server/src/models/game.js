@@ -137,6 +137,45 @@ export class Game {
     this.phase = GAME_PHASES.AUCTION;
   }
 
+  // Restart the current auction (useful when a player rejoins)
+  restartCurrentAuction() {
+    if (!this.currentCard || this.phase !== GAME_PHASES.AUCTION) {
+      return; // Only restart if we're in an active auction
+    }
+
+    // Return all bids to players' money hands
+    this.players.forEach(player => {
+      player.currentBid = [];
+      player.hasPassed = false;
+    });
+
+    // Keep the same card and auction type, just reset the bidding
+    const auctionType = this.currentCard.type === CARD_TYPES.DISGRACE
+      ? AUCTION_TYPES.REVERSE
+      : AUCTION_TYPES.STANDARD;
+
+    // Restart from the original starting player
+    let startingPlayerId = this.nextStartingPlayerId || this.players[0].id;
+    let startingPlayerIndex = this.players.findIndex(p => p.id === startingPlayerId);
+
+    // If starting player not found, use first player
+    if (startingPlayerIndex === -1) {
+      startingPlayerIndex = 0;
+      startingPlayerId = this.players[0].id;
+    }
+
+    this.currentAuction = {
+      type: auctionType,
+      highestBid: 0,
+      highestBidder: null,
+      activePlayers: this.players.map(p => p.id),
+      currentTurnIndex: startingPlayerIndex,
+      currentTurnPlayerId: startingPlayerId
+    };
+
+    console.log(`Auction restarted for card: ${this.currentCard.name}`);
+  }
+
   // Place a bid
   placeBid(playerId, moneyCardIds) {
     const player = this.players.find(p => p.id === playerId);

@@ -42,6 +42,10 @@ function App() {
       setPhase(publicState.phase);
     });
 
+    socketService.on('state_update', ({ publicState }) => {
+      setGameState(publicState);
+    });
+
     socketService.on('private_state_update', ({ privateState }) => {
       setPrivateState(privateState);
     });

@@ -149,8 +149,6 @@ function CardModal({ cardData, onClose }) {
   return (
     <div className="card-modal-overlay" onClick={onClose}>
       <div className="card-modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose}>×</button>
-
         <div className={`card-type-badge ${getCardTypeBadge(cardData.type)}`}>
           {cardData.type}
         </div>

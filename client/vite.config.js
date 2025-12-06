@@ -22,7 +22,7 @@ try {
 }
 
 // Get server URL for proxy (for API calls)
-const serverUrl = process.env.VITE_SERVER_URL || config.client?.serverUrl || 'http://localhost:3003';
+const serverUrl = process.env.VITE_SERVER_URL || config.client?.serverUrl || 'https://lss.ztmoon.com';
 console.log('Vite config - Server URL:', serverUrl);
 
 // Build allowedHosts list from config
