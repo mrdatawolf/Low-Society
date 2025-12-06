@@ -7,7 +7,7 @@ class SocketService {
     this.listeners = new Map();
   }
 
-  connect(serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3003') {
+  connect(serverUrl = import.meta.env.VITE_SERVER_URL || 'https://lss.ztmoon.com') {
     if (this.socket?.connected) {
       return this.socket;
     }

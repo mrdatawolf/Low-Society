@@ -58,6 +58,60 @@ class RoomManager {
       throw new Error('You are already in a room');
     }
 
+    // Check if this is a rejoin attempt (same name, game in progress)
+    // Use case-insensitive comparison
+    const existingPlayer = game.players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (existingPlayer && game.phase !== GAME_PHASES.WAITING) {
+      // Allow rejoin - update the player's socket ID
+      console.log(`${playerName} rejoining room ${roomCode} (old: ${existingPlayer.id}, new: ${playerId})`);
+
+      // Store old ID for host check
+      const oldPlayerId = existingPlayer.id;
+
+      // Remove old player ID from tracking
+      this.playerRooms.delete(existingPlayer.id);
+
+      // Update player ID
+      existingPlayer.id = playerId;
+      this.playerRooms.set(playerId, roomCode);
+
+      // Update host if this was the host
+      if (game.host === oldPlayerId) {
+        game.host = playerId;
+      }
+
+      // Update currentTurnPlayerId in auction if this was the current turn player
+      if (game.currentAuction && game.currentAuction.currentTurnPlayerId === oldPlayerId) {
+        game.currentAuction.currentTurnPlayerId = playerId;
+      }
+
+      // Update swapWinner if this was the swap winner
+      if (game.currentAuction && game.currentAuction.swapWinner === oldPlayerId) {
+        game.currentAuction.swapWinner = playerId;
+      }
+
+      // Update discardingPlayerId if this was the discarding player
+      if (game.discardingPlayerId === oldPlayerId) {
+        game.discardingPlayerId = playerId;
+      }
+
+      // Update nextStartingPlayerId if this was the next starting player
+      if (game.nextStartingPlayerId === oldPlayerId) {
+        game.nextStartingPlayerId = playerId;
+      }
+
+      // Restart the current auction to ensure clean state
+      console.log(`Rejoin - Game phase: ${game.phase}, Has auction: ${!!game.currentAuction}`);
+      if (game.phase === 'auction') {
+        game.restartCurrentAuction();
+        console.log(`Auction restarted due to ${playerName} rejoining`);
+        console.log(`After restart - Turn player: ${game.currentAuction?.currentTurnPlayerId}`);
+      }
+
+      console.log(`${playerName} (${playerId}) rejoined room ${roomCode}`);
+      return game;
+    }
+
     // Add player to game
     game.addPlayer(playerId, playerName);
     this.playerRooms.set(playerId, roomCode);

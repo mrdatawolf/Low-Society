@@ -9,6 +9,48 @@ import { dirname, join } from 'path';
 import { roomManager } from './services/roomManager.js';
 import { GAME_PHASES } from './models/game.js';
 
+// Input validation helpers
+function sanitizePlayerName(name) {
+  if (!name || typeof name !== 'string') {
+    throw new Error('Player name is required');
+  }
+
+  const trimmed = name.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error('Player name cannot be empty');
+  }
+
+  if (trimmed.length > 20) {
+    throw new Error('Player name too long (max 20 characters)');
+  }
+
+  // Allow letters, numbers, spaces, underscores, hyphens
+  if (!/^[a-zA-Z0-9\s_-]+$/.test(trimmed)) {
+    throw new Error('Player name contains invalid characters (only letters, numbers, spaces, _, - allowed)');
+  }
+
+  return trimmed;
+}
+
+function sanitizeRoomCode(code) {
+  if (!code || typeof code !== 'string') {
+    throw new Error('Room code is required');
+  }
+
+  const trimmed = code.trim().toUpperCase();
+
+  if (trimmed.length !== 4) {
+    throw new Error('Room code must be 4 characters');
+  }
+
+  if (!/^[A-Z0-9]+$/.test(trimmed)) {
+    throw new Error('Room code must be alphanumeric');
+  }
+
+  return trimmed;
+}
+
 // Load config
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, '..', '..', 'config.js');
@@ -72,7 +114,8 @@ io.on('connection', (socket) => {
   // Create a new room
   socket.on('create_room', ({ playerName }, callback) => {
     try {
-      const { roomCode, game } = roomManager.createRoom(socket.id, playerName);
+      const sanitizedName = sanitizePlayerName(playerName);
+      const { roomCode, game } = roomManager.createRoom(socket.id, sanitizedName);
 
       // Join socket room
       socket.join(roomCode);
@@ -91,19 +134,29 @@ io.on('connection', (socket) => {
   // Join an existing room
   socket.on('join_room', ({ roomCode, playerName }, callback) => {
     try {
-      const game = roomManager.joinRoom(roomCode, socket.id, playerName);
+      const sanitizedCode = sanitizeRoomCode(roomCode);
+      const sanitizedName = sanitizePlayerName(playerName);
+      const game = roomManager.joinRoom(sanitizedCode, socket.id, sanitizedName);
 
       // Join socket room
-      socket.join(roomCode);
+      socket.join(sanitizedCode);
 
-      // Notify other players
-      socket.to(roomCode).emit('player_joined', {
+      // Broadcast updated state to ALL players
+      // This ensures everyone has the updated player IDs and restarted auction if applicable
+      io.to(sanitizedCode).emit('state_update', {
         publicState: game.getPublicState()
+      });
+
+      // Send private state updates to all players (bids were cleared if auction restarted)
+      game.players.forEach(player => {
+        io.to(player.id).emit('private_state_update', {
+          privateState: game.getPrivateState(player.id)
+        });
       });
 
       callback({
         success: true,
-        roomCode,
+        roomCode: sanitizedCode,
         publicState: game.getPublicState(),
         privateState: game.getPrivateState(socket.id)
       });
@@ -298,13 +351,33 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
 
-    const result = roomManager.leaveRoom(socket.id);
+    const roomCode = roomManager.getPlayerRoom(socket.id);
+    if (!roomCode) return;
 
-    if (result) {
-      const { roomCode, game } = result;
+    const game = roomManager.getGame(roomCode);
+    if (!game) return;
 
-      // Notify remaining players
-      io.to(roomCode).emit('player_left', {
+    // Only remove player if game hasn't started (still in waiting phase)
+    // Otherwise, keep player in game so they can rejoin
+    if (game.phase === GAME_PHASES.WAITING) {
+      const result = roomManager.leaveRoom(socket.id);
+
+      if (result) {
+        const { roomCode, game } = result;
+
+        // Notify remaining players
+        io.to(roomCode).emit('player_left', {
+          publicState: game.getPublicState()
+        });
+      }
+    } else {
+      // Game in progress - just remove socket mapping but keep player in game
+      roomManager.playerRooms.delete(socket.id);
+      console.log(`Player ${socket.id} disconnected from active game ${roomCode} (can rejoin)`);
+
+      // Notify other players that someone disconnected (but is still in game)
+      io.to(roomCode).emit('player_disconnected', {
+        playerId: socket.id,
         publicState: game.getPublicState()
       });
     }

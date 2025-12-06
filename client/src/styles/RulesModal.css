@@ -183,8 +183,8 @@
 /* Rules Button (shown on all pages) */
 .rules-button {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   background: var(--accent-primary);
   color: #000;
   border: 3px solid var(--accent-secondary);
