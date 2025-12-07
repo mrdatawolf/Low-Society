@@ -7,9 +7,17 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { roomManager } from './services/roomManager.js';
-import { GAME_PHASES } from './models/game.js';
-import { checkAndHandleAITurn, registerAIPlayer, removeAIPlayer } from './ai/aiHandler.js';
+import { GAME_PHASES } from './shared/constants/gamePhases.js';
+import { SOCKET_EVENTS } from './shared/constants/socketEvents.js';
+import { GAME_CONFIG } from './shared/constants/gameConfig.js';
+import { checkAndHandleAITurn, registerAIPlayer, removeAIPlayer, clearAIPlayers } from './ai/aiHandler.js';
 import { createAIPlayer } from './ai/AIPlayer.js';
+import { handleSocketError, errors } from './utils/errorHandler.js';
+
+// Set up AI cleanup when rooms are deleted
+roomManager.on('roomDeleted', (roomCode) => {
+  clearAIPlayers(roomCode);
+});
 
 // Input validation helpers
 function sanitizePlayerName(name) {
@@ -19,16 +27,15 @@ function sanitizePlayerName(name) {
 
   const trimmed = name.trim();
 
-  if (trimmed.length === 0) {
+  if (trimmed.length < GAME_CONFIG.validation.playerNameMinLength) {
     throw new Error('Player name cannot be empty');
   }
 
-  if (trimmed.length > 20) {
-    throw new Error('Player name too long (max 20 characters)');
+  if (trimmed.length > GAME_CONFIG.validation.playerNameMaxLength) {
+    throw new Error(`Player name too long (max ${GAME_CONFIG.validation.playerNameMaxLength} characters)`);
   }
 
-  // Allow letters, numbers, spaces, underscores, hyphens
-  if (!/^[a-zA-Z0-9\s_-]+$/.test(trimmed)) {
+  if (!GAME_CONFIG.validation.playerNamePattern.test(trimmed)) {
     throw new Error('Player name contains invalid characters (only letters, numbers, spaces, _, - allowed)');
   }
 
@@ -42,8 +49,8 @@ function sanitizeRoomCode(code) {
 
   const trimmed = code.trim().toUpperCase();
 
-  if (trimmed.length !== 4) {
-    throw new Error('Room code must be 4 characters');
+  if (trimmed.length !== GAME_CONFIG.room.codeLength) {
+    throw new Error(`Room code must be ${GAME_CONFIG.room.codeLength} characters`);
   }
 
   if (!/^[A-Z0-9]+$/.test(trimmed)) {
@@ -53,17 +60,90 @@ function sanitizeRoomCode(code) {
   return trimmed;
 }
 
+function validateMoneyCardIds(moneyCardIds) {
+  if (!Array.isArray(moneyCardIds)) {
+    throw new Error('Money card IDs must be an array');
+  }
+
+  if (moneyCardIds.length === 0) {
+    throw new Error('Must select at least one money card');
+  }
+
+  if (moneyCardIds.length > GAME_CONFIG.money.maxCardsInHand) {
+    throw new Error(`Cannot bid more than ${GAME_CONFIG.money.maxCardsInHand} cards`);
+  }
+
+  // Validate each ID is a string
+  moneyCardIds.forEach((id, index) => {
+    if (typeof id !== 'string' || id.trim().length === 0) {
+      throw new Error(`Invalid money card ID at index ${index}`);
+    }
+  });
+
+  return moneyCardIds;
+}
+
+function validateCardSwapParams(player1Id, card1Id, player2Id, card2Id) {
+  // Allow null for skip
+  if (player1Id === null && card1Id === null && player2Id === null && card2Id === null) {
+    return { isSkip: true };
+  }
+
+  // If not skipping, all parameters must be provided
+  if (!player1Id || !card1Id || !player2Id || !card2Id) {
+    throw new Error('Card swap requires all parameters or all null to skip');
+  }
+
+  if (typeof player1Id !== 'string' || typeof player2Id !== 'string') {
+    throw new Error('Player IDs must be strings');
+  }
+
+  if (typeof card1Id !== 'string' || typeof card2Id !== 'string') {
+    throw new Error('Card IDs must be strings');
+  }
+
+  if (player1Id === player2Id && card1Id === card2Id) {
+    throw new Error('Cannot swap a card with itself');
+  }
+
+  return { isSkip: false };
+}
+
+function validateCardId(cardId) {
+  if (!cardId || typeof cardId !== 'string' || cardId.trim().length === 0) {
+    throw new Error('Invalid card ID');
+  }
+  return cardId;
+}
+
 // Load config
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configPath = join(__dirname, '..', '..', 'config.js');
 let config;
 try {
-  // Read as CommonJS module
+  // Read as CommonJS module and convert to JSON-safe format
   const configContent = readFileSync(configPath, 'utf8');
-  // Simple eval to get the config (since it's a CommonJS module.exports)
+  // Extract the object literal using regex and convert to JSON
   const match = configContent.match(/module\.exports\s*=\s*(\{[\s\S]*\});/);
   if (match) {
-    config = eval('(' + match[1] + ')');
+    // Use Function constructor instead of eval for safer parsing
+    // This still evaluates code but is more controlled than eval
+    // Better solution would be to use ES modules or JSON config files
+    const configString = match[1];
+    // Replace JavaScript object syntax with JSON-compatible syntax
+    const jsonString = configString
+      .replace(/(\w+):/g, '"$1":')  // Quote keys
+      .replace(/'/g, '"');           // Replace single quotes with double quotes
+
+    try {
+      config = JSON.parse(jsonString);
+    } catch (jsonError) {
+      // Fallback to Function constructor if JSON parsing fails
+      // This is safer than eval as it doesn't have access to local scope
+      const configFunc = new Function('return ' + configString);
+      config = configFunc();
+      console.warn('Config parsed using Function constructor. Consider migrating to JSON or ES modules.');
+    }
   } else {
     throw new Error('Could not parse config file');
   }
@@ -133,14 +213,13 @@ io.on('connection', (socket) => {
       // Auto-fill with AI players if enabled (default true)
       const shouldFillAI = aiEnabled !== undefined ? aiEnabled : true;
       if (shouldFillAI) {
-        const maxPlayers = 5;
         const currentPlayerCount = game.players.length;
-        const aiPlayersNeeded = maxPlayers - currentPlayerCount;
+        const aiPlayersNeeded = GAME_CONFIG.players.max - currentPlayerCount;
 
         if (aiPlayersNeeded > 0) {
           console.log(`[AI] Auto-filling room ${roomCode} with ${aiPlayersNeeded} AI players`);
 
-          // Add AI players with staggered delays (250ms between each)
+          // Add AI players with staggered delays
           for (let i = 0; i < aiPlayersNeeded; i++) {
             setTimeout(() => {
               const aiPlayer = createAIPlayer(i);
@@ -149,15 +228,15 @@ io.on('connection', (socket) => {
               console.log(`[AI] Added ${aiPlayer.name} to room ${roomCode}`);
 
               // Broadcast updated state to all players in room
-              io.to(roomCode).emit('state_update', {
+              io.to(roomCode).emit(SOCKET_EVENTS.STATE_UPDATE, {
                 publicState: game.getPublicState()
               });
-            }, i * 250);
+            }, i * GAME_CONFIG.ai.playerAddDelay);
           }
         }
       }
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'create_room', playerName });
     }
   });
 
@@ -203,7 +282,7 @@ io.on('connection', (socket) => {
         privateState: game.getPrivateState(socket.id)
       });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'join_room', roomCode, playerName });
     }
   });
 
@@ -211,13 +290,13 @@ io.on('connection', (socket) => {
   socket.on('start_game', (data, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
 
       if (game.host !== socket.id) {
-        throw new Error('Only the host can start the game');
+        throw errors.notHost();
       }
 
       // Get AI enabled flag (default to true for backwards compatibility)
@@ -225,13 +304,11 @@ io.on('connection', (socket) => {
       const spectatorMode = data.spectatorMode || false;
 
       // Auto-fill with AI players if needed and AI is enabled
-      const minPlayers = 3;
-      const maxPlayers = 5;
       let currentPlayerCount = game.players.length;
 
-      // If spectator mode, remove ALL existing players and add 5 fresh AI players
+      // If spectator mode, remove ALL existing players and add max AI players
       if (spectatorMode) {
-        console.log(`[AI] Starting spectator mode - removing all players and adding 5 AI players`);
+        console.log(`[AI] Starting spectator mode - removing all players and adding ${GAME_CONFIG.players.max} AI players`);
 
         // Remove all existing players (human and AI)
         const playersCopy = [...game.players];
@@ -244,17 +321,17 @@ io.on('connection', (socket) => {
           console.log(`[AI] Removed ${player.isAI ? 'AI' : 'human'} player ${player.name} for spectator mode`);
         });
 
-        // Add 5 fresh AI players
-        for (let i = 0; i < 5; i++) {
+        // Add max AI players
+        for (let i = 0; i < GAME_CONFIG.players.max; i++) {
           const aiPlayer = createAIPlayer(i);
           game.addPlayer(aiPlayer.id, aiPlayer.name, true); // true = isAI
           registerAIPlayer(roomCode, aiPlayer);
           console.log(`[AI] Added ${aiPlayer.name} (${aiPlayer.id}) for spectator mode`);
         }
-      } else if (aiEnabled && currentPlayerCount < maxPlayers) {
-        // Fill to max players (5) when AI is enabled
-        const aiPlayersNeeded = maxPlayers - currentPlayerCount;
-        console.log(`[AI] Adding ${aiPlayersNeeded} AI players to fill room to ${maxPlayers}`);
+      } else if (aiEnabled && currentPlayerCount < GAME_CONFIG.players.max) {
+        // Fill to max players when AI is enabled
+        const aiPlayersNeeded = GAME_CONFIG.players.max - currentPlayerCount;
+        console.log(`[AI] Adding ${aiPlayersNeeded} AI players to fill room to ${GAME_CONFIG.players.max}`);
 
         for (let i = 0; i < aiPlayersNeeded; i++) {
           const aiPlayer = createAIPlayer(i);
@@ -262,8 +339,8 @@ io.on('connection', (socket) => {
           registerAIPlayer(roomCode, aiPlayer);
           console.log(`[AI] Added ${aiPlayer.name} (${aiPlayer.id}) to room ${roomCode}`);
         }
-      } else if (!aiEnabled && currentPlayerCount < minPlayers) {
-        throw new Error('Need at least 3 players to start (AI players disabled)');
+      } else if (!aiEnabled && currentPlayerCount < GAME_CONFIG.players.min) {
+        throw errors.notEnoughPlayers(GAME_CONFIG.players.min);
       }
 
       game.startGame();
@@ -285,7 +362,7 @@ io.on('connection', (socket) => {
 
       callback({ success: true });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'start_game' });
     }
   });
 
@@ -293,12 +370,15 @@ io.on('connection', (socket) => {
   socket.on('place_bid', ({ moneyCardIds }, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
 
-      const bidTotal = game.placeBid(socket.id, moneyCardIds);
+      // Validate money card IDs
+      const validatedCardIds = validateMoneyCardIds(moneyCardIds);
+
+      const bidTotal = game.placeBid(socket.id, validatedCardIds);
 
       // Notify all players of new bid
       io.to(roomCode).emit('bid_placed', {
@@ -317,7 +397,7 @@ io.on('connection', (socket) => {
 
       callback({ success: true, bidTotal });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'place_bid' });
     }
   });
 
@@ -325,10 +405,10 @@ io.on('connection', (socket) => {
   socket.on('pass', (data, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
 
       game.pass(socket.id);
 
@@ -350,7 +430,7 @@ io.on('connection', (socket) => {
 
       callback({ success: true });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'pass' });
     }
   });
 
@@ -358,10 +438,13 @@ io.on('connection', (socket) => {
   socket.on('execute_card_swap', ({ player1Id, card1Id, player2Id, card2Id }, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
+
+      // Validate card swap parameters
+      validateCardSwapParams(player1Id, card1Id, player2Id, card2Id);
 
       game.executeCardSwap(socket.id, player1Id, card1Id, player2Id, card2Id);
 
@@ -379,7 +462,7 @@ io.on('connection', (socket) => {
 
       callback({ success: true });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'execute_card_swap' });
     }
   });
 
@@ -387,12 +470,15 @@ io.on('connection', (socket) => {
   socket.on('discard_luxury_card', ({ cardId }, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
 
-      game.discardLuxuryCard(socket.id, cardId);
+      // Validate card ID
+      const validatedCardId = validateCardId(cardId);
+
+      game.discardLuxuryCard(socket.id, validatedCardId);
 
       // Notify all players
       io.to(roomCode).emit('luxury_card_discarded', {
@@ -406,7 +492,7 @@ io.on('connection', (socket) => {
 
       callback({ success: true });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'discard_luxury_card' });
     }
   });
 
@@ -414,10 +500,10 @@ io.on('connection', (socket) => {
   socket.on('get_state', (data, callback) => {
     try {
       const roomCode = roomManager.getPlayerRoom(socket.id);
-      if (!roomCode) throw new Error('You are not in a room');
+      if (!roomCode) throw errors.notInRoom();
 
       const game = roomManager.getGame(roomCode);
-      if (!game) throw new Error('Room not found');
+      if (!game) throw errors.roomNotFound(roomCode);
 
       callback({
         success: true,
@@ -425,7 +511,7 @@ io.on('connection', (socket) => {
         privateState: game.getPrivateState(socket.id)
       });
     } catch (error) {
-      callback({ success: false, error: error.message });
+      handleSocketError(error, callback, socket, { event: 'get_state' });
     }
   });
 

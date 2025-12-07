@@ -1,14 +1,10 @@
 // Game state model
 import { buildItemDeck, createMoneyHand, removeRandomBill, isGameEndingCard, calculateScore, CARD_TYPES } from './cards.js';
+import { GAME_PHASES } from '../shared/constants/gamePhases.js';
+import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
 
-export const GAME_PHASES = {
-  WAITING: 'waiting',           // Waiting for players
-  STARTING: 'starting',         // Game is starting (removing random bills)
-  AUCTION: 'auction',           // Active auction
-  CARD_SWAP: 'card_swap',       // Pawn Shop Trade - winner selecting cards to swap
-  DISCARD_LUXURY: 'discard_luxury', // Repo Man - player selecting luxury to discard
-  GAME_OVER: 'game_over'        // Game ended
-};
+// Re-export for backwards compatibility
+export { GAME_PHASES };
 
 export const AUCTION_TYPES = {
   STANDARD: 'standard',         // Bidding to win
@@ -32,8 +28,8 @@ export class Game {
 
   // Add a player to the game
   addPlayer(playerId, playerName, isAI = false) {
-    if (this.players.length >= 5) {
-      throw new Error('Room is full (max 5 players)');
+    if (this.players.length >= GAME_CONFIG.players.max) {
+      throw new Error(`Room is full (max ${GAME_CONFIG.players.max} players)`);
     }
 
     if (this.phase !== GAME_PHASES.WAITING) {
@@ -76,8 +72,8 @@ export class Game {
 
   // Start the game
   startGame() {
-    if (this.players.length < 3) {
-      throw new Error('Need at least 3 players to start');
+    if (this.players.length < GAME_CONFIG.players.min) {
+      throw new Error(`Need at least ${GAME_CONFIG.players.min} players to start`);
     }
 
     // Build and shuffle deck
