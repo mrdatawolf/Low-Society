@@ -45,18 +45,31 @@ export function AuctionTypeBanner({ auctionType, visible = true }) {
  */
 export function PawnShopTradeOverlay({ visible, onClose }) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
     if (visible) {
+      setShouldShow(true);
       setIsAnimating(true);
-      const timer = setTimeout(() => {
+      const fadeTimer = setTimeout(() => {
         setIsAnimating(false);
-      }, 2000); // Show for 2 seconds then fade
-      return () => clearTimeout(timer);
+      }, 2000); // Show for 2 seconds then start fade
+
+      const hideTimer = setTimeout(() => {
+        setShouldShow(false);
+      }, 2500); // Hide completely after fade (2s + 0.5s fade)
+
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+      };
+    } else {
+      setShouldShow(false);
+      setIsAnimating(false);
     }
   }, [visible]);
 
-  if (!visible && !isAnimating) return null;
+  if (!shouldShow) return null;
 
   return (
     <div className={`phase-overlay pawn-shop ${isAnimating ? 'animating' : 'fading'}`}>
@@ -75,18 +88,31 @@ export function PawnShopTradeOverlay({ visible, onClose }) {
  */
 export function RepoManOverlay({ visible, playerName }) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
     if (visible) {
+      setShouldShow(true);
       setIsAnimating(true);
-      const timer = setTimeout(() => {
+      const fadeTimer = setTimeout(() => {
         setIsAnimating(false);
-      }, 2000); // Show for 2 seconds then fade
-      return () => clearTimeout(timer);
+      }, 2000); // Show for 2 seconds then start fade
+
+      const hideTimer = setTimeout(() => {
+        setShouldShow(false);
+      }, 2500); // Hide completely after fade (2s + 0.5s fade)
+
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+      };
+    } else {
+      setShouldShow(false);
+      setIsAnimating(false);
     }
   }, [visible]);
 
-  if (!visible && !isAnimating) return null;
+  if (!shouldShow) return null;
 
   return (
     <div className={`phase-overlay repo-man ${isAnimating ? 'animating' : 'fading'}`}>

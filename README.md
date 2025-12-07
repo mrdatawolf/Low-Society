@@ -24,6 +24,9 @@ Low Society is an auction card game for 3-5 players where you bid with food stam
 Low-Society/
 ├── server/                 # Node.js backend with Socket.io
 │   ├── src/
+│   │   ├── ai/            # AI player logic (NEW!)
+│   │   │   ├── AIPlayer.js      # AI decision-making class
+│   │   │   └── aiHandler.js     # AI turn management
 │   │   ├── models/        # Game logic and card definitions
 │   │   ├── services/      # Room management
 │   │   └── server.js      # Main server file (port 3003)
@@ -35,15 +38,18 @@ Low-Society/
 ├── client/                # React frontend with Vite
 │   ├── src/
 │   │   ├── components/   # React components (Home, Lobby, Game screens)
+│   │   │   └── ui/       # UI components (PokerTable, GameHistory, etc.)
 │   │   ├── services/     # Socket.io client service
 │   │   ├── styles/       # CSS styles with Low Society theme
 │   │   ├── test/         # Vitest test suite (28 tests)
 │   │   └── App.jsx       # Main app (runs on port 3004)
 │   └── package.json
-├── README.md              # This file
-├── QUICKSTART.md          # Quick setup guide
-├── IMPLEMENTATION.md      # Implementation details
-└── TESTING.md             # Test documentation
+├── README.md                   # This file
+├── QUICKSTART.md               # Quick setup guide
+├── IMPLEMENTATION.md           # Implementation details
+├── TESTING.md                  # Test documentation
+├── DISCONNECT-RECONNECT.md     # Player disconnect/reconnect handling
+└── AI-PLAYERS.md               # AI companion players (COMPLETED!)
 ```
 
 ## Setup Instructions
@@ -110,6 +116,11 @@ Client will run on `http://localhost:3004`
 4. Share the 4-letter room code with friends
 5. Friends can click "Join Room" and enter the code
 6. Once you have 3-5 players, the host can start the game
+
+**New AI Features:**
+- 🤖 **AI Players**: Toggle "Fill with AI Players" to automatically fill empty spots with AI companions
+- 🎭 **Watch AI Game**: Click "Watch AI Game" to spectate an all-AI game
+- 📜 **Game History**: View a timeline of all game events (bids, passes, wins, round changes) in a slide-out panel
 
 ## Game Rules
 

@@ -26,7 +26,10 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, error }) {
 
   const handleCreateRoom = () => {
     if (playerName.trim()) {
-      onCreateRoom(playerName.trim());
+      // Load AI preference from localStorage
+      const saved = localStorage.getItem('lowsociety_ai_enabled');
+      const aiEnabled = saved !== null ? JSON.parse(saved) : true;
+      onCreateRoom(playerName.trim(), { aiEnabled });
     }
   };
 

@@ -3,8 +3,10 @@ import { PokerTable } from './ui/PokerTable';
 import { Card } from './ui/Card';
 import { MoneyHand } from './ui/FoodStampBills';
 import { PawnShopTradeOverlay, RepoManOverlay } from './ui/PhaseOverlay';
+import { GameHistory } from './ui/GameHistory';
 import '../styles/FoodStampBills.css';
 import '../styles/PhaseOverlay.css';
+import '../styles/GameHistory.css';
 
 export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom, roundReset, gameDisconnected }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
@@ -12,9 +14,12 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
   const [selectedDiscardCard, setSelectedDiscardCard] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
   const [showResetMessage, setShowResetMessage] = useState(false);
+  const [gameEvents, setGameEvents] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const myPlayer = gameState.players.find(p => p.id === myPlayerId);
-  const isMyTurn = gameState.currentAuction?.currentTurnPlayerId === myPlayerId && !myPlayer?.hasPassed;
+  const isSpectator = !myPlayer; // If we can't find the player, they're a spectator
+  const isMyTurn = !isSpectator && gameState.currentAuction?.currentTurnPlayerId === myPlayerId && !myPlayer?.hasPassed;
 
   // Disable all interactions when game is disconnected
   const isInteractionDisabled = gameDisconnected;
@@ -42,6 +47,100 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
       };
     }
   }, [roundReset?.timestamp]);
+
+  // Track game events for history
+  useEffect(() => {
+    // Add game start event
+    if (gameState.phase !== 'waiting' && gameEvents.length === 0) {
+      setGameEvents([{
+        type: 'game_start',
+        message: 'Game started!',
+        timestamp: Date.now()
+      }]);
+    }
+  }, [gameState.phase]);
+
+  // Track new card/round
+  useEffect(() => {
+    if (gameState.currentCard) {
+      const cardName = gameState.currentCard.name || 'Unknown Card';
+      const auctionType = gameState.currentAuction?.type === 'reverse' ? 'AVOID' : 'WIN';
+      setGameEvents(prev => [...prev, {
+        type: 'round_start',
+        message: `New Round: ${cardName} (${auctionType})`,
+        timestamp: Date.now()
+      }]);
+    }
+  }, [gameState.currentCard?.id]);
+
+  // Track player actions via game state changes
+  useEffect(() => {
+    if (!gameState.currentAuction) return;
+
+    // Track who passed
+    gameState.players.forEach(player => {
+      if (player.hasPassed) {
+        const alreadyLogged = gameEvents.some(e =>
+          e.type === 'pass' &&
+          e.playerId === player.id &&
+          e.cardId === gameState.currentCard?.id
+        );
+
+        if (!alreadyLogged) {
+          setGameEvents(prev => [...prev, {
+            type: 'pass',
+            message: `${player.name} passed`,
+            timestamp: Date.now(),
+            playerId: player.id,
+            cardId: gameState.currentCard?.id
+          }]);
+        }
+      }
+
+      // Track current bids
+      if (player.currentBidTotal > 0) {
+        const lastBidEvent = gameEvents.filter(e =>
+          e.type === 'bid' &&
+          e.playerId === player.id &&
+          e.cardId === gameState.currentCard?.id
+        ).pop();
+
+        if (!lastBidEvent || lastBidEvent.amount !== player.currentBidTotal) {
+          setGameEvents(prev => [...prev, {
+            type: 'bid',
+            message: `${player.name} bid $${player.currentBidTotal}`,
+            timestamp: Date.now(),
+            playerId: player.id,
+            amount: player.currentBidTotal,
+            cardId: gameState.currentCard?.id
+          }]);
+        }
+      }
+    });
+  }, [gameState.players, gameState.currentCard?.id]);
+
+  // Track card wins
+  useEffect(() => {
+    gameState.players.forEach(player => {
+      player.wonCards.forEach(card => {
+        const alreadyLogged = gameEvents.some(e =>
+          e.type === 'win' &&
+          e.playerId === player.id &&
+          e.wonCardId === card.id
+        );
+
+        if (!alreadyLogged) {
+          setGameEvents(prev => [...prev, {
+            type: 'win',
+            message: `${player.name} won ${card.name}`,
+            timestamp: Date.now(),
+            playerId: player.id,
+            wonCardId: card.id
+          }]);
+        }
+      });
+    });
+  }, [gameState.players.map(p => p.wonCards.length).join(',')]);
 
   const handleMoneyClick = (moneyCard) => {
     if (isInteractionDisabled) return;
@@ -204,6 +303,20 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
         </button>
       </div>
 
+      {/* History Toggle Button */}
+      <button
+        className="history-toggle-btn"
+        onClick={() => setShowHistory(!showHistory)}
+        title="Toggle Game History"
+      >
+        📜 {showHistory ? 'Hide' : 'History'}
+      </button>
+
+      {/* Slide-out History Panel */}
+      <div className={`history-panel ${showHistory ? 'history-panel-open' : ''}`}>
+        <GameHistory events={gameEvents} />
+      </div>
+
       <div className="game-board">
         {/* Player Cards Display - Show won cards with swap functionality */}
         <div className="players-cards-area">
@@ -263,7 +376,31 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
 
         {/* Money Hand / Card Swap Control / Discard Control */}
         <div className="money-hand">
-          {isDiscardLuxuryPhase ? (
+          {isSpectator ? (
+            // Spectator Mode UI
+            <>
+              <h3>🎭 Spectator Mode</h3>
+              <div style={{
+                padding: '20px',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                border: '2px solid var(--accent-primary)',
+                textAlign: 'center'
+              }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '15px', fontSize: '1rem' }}>
+                  You are watching an AI-only game
+                </p>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                  <p style={{ marginBottom: '10px' }}>
+                    All players are AI-controlled. Watch as they bid, pass, and compete for luxury items!
+                  </p>
+                  <p style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
+                    Sit back and enjoy the show! 🍿
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : isDiscardLuxuryPhase ? (
             // Discard Luxury UI
             <>
               <h3>🚨 Repo Man</h3>

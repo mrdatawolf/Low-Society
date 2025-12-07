@@ -133,6 +133,16 @@ All 120 tests should pass! Tests run without needing a server.
 - Check the server terminal for errors
 - Check browser console (F12) for client errors
 
+**Player disconnected during game?**
+- When a player disconnects, all remaining players see a red warning overlay
+- The game becomes unclickable (50% opacity) except the Leave Game button
+- All player avatars remain visible in their positions
+- When the disconnected player rejoins:
+  - The current auction round resets automatically
+  - All screens fade out and back in (1 second animation)
+  - A blue banner shows "Round reset - [PlayerName] rejoined" for 4 seconds
+  - Game becomes interactive again and continues from the start of that round
+
 **Not your turn?**
 - Low Society uses turn-based bidding
 - Wait for your turn (indicated by "← TURN" marker)

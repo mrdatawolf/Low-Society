@@ -17,6 +17,7 @@ import '../../styles/CardDeck.css';
  * @param {object} currentCard - Current card being auctioned (optional)
  * @param {string} tableImage - Optional custom table background image
  * @param {function} onPlayerClick - Optional click handler for player avatars
+ * @param {boolean} showStats - Whether to show player stats (default: true)
  */
 export function PokerTable({
   players = [],
@@ -25,7 +26,8 @@ export function PokerTable({
   currentCard = null,
   cardsRemaining = 0,
   tableImage = null,
-  onPlayerClick = null
+  onPlayerClick = null,
+  showStats = true
 }) {
   const [animateReveal, setAnimateReveal] = useState(false);
   const [animateCollect, setAnimateCollect] = useState(false);
@@ -186,8 +188,9 @@ export function PokerTable({
                 hasPassed={player.hasPassed}
                 isCurrentTurn={isCurrentTurn}
                 isCurrentPlayer={isCurrentPlayer}
+                isAI={player.isAI || false}
                 showName={true}
-                showStats={true}
+                showStats={showStats}
                 stats={{
                   money: player.remainingMoney || 0,
                   cards: player.wonCardsCount || 0,

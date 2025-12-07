@@ -120,13 +120,28 @@ class RoomManager {
       return { game, roundWasReset };
     }
 
+    // Check if room is full
+    let removedAIPlayer = null;
+    if (game.players.length >= 5) {
+      // Room is full - check if there's an AI player to replace
+      const aiPlayer = game.players.find(p => p.isAI);
+      if (aiPlayer) {
+        // Remove the AI player to make room
+        game.removePlayer(aiPlayer.id);
+        removedAIPlayer = aiPlayer.id;
+        console.log(`${playerName} replacing AI player ${aiPlayer.name} in room ${roomCode}`);
+      } else {
+        throw new Error('Room is full (max 5 players)');
+      }
+    }
+
     // Add player to game
     game.addPlayer(playerId, playerName);
     this.playerRooms.set(playerId, roomCode);
 
     console.log(`${playerName} (${playerId}) joined room ${roomCode}`);
 
-    return { game, roundWasReset: false };
+    return { game, roundWasReset: false, removedAIPlayer };
   }
 
   // Leave a room

@@ -102,16 +102,16 @@ class SocketService {
   }
 
   // Game-specific methods
-  async createRoom(playerName) {
-    return this.emit('create_room', { playerName });
+  async createRoom(playerName, options = {}) {
+    return this.emit('create_room', { playerName, ...options });
   }
 
   async joinRoom(roomCode, playerName) {
     return this.emit('join_room', { roomCode, playerName });
   }
 
-  async startGame() {
-    return this.emit('start_game', {});
+  async startGame(options = {}) {
+    return this.emit('start_game', options);
   }
 
   async placeBid(moneyCardIds) {
