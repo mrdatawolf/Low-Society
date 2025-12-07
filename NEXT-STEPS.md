@@ -385,14 +385,14 @@ const updatedPlayer = {
 
 ### Phase 3: Architecture Improvements (Week 3)
 - [ ] Introduce Controller layer
-- [ ] Add AI turn queue/mutex
-- [ ] Refactor state management
-- [ ] Add comprehensive JSDoc comments
+- [X] Add AI turn queue/mutex
+- [X] Split server.js into handler modules
+- [X] Add comprehensive JSDoc comments
 
-### Phase 4: Developer Experience (Week 4)
-- [ ] Add TypeScript definitions (or full migration)
-- [ ] Improve test coverage
-- [ ] Add API documentation
+### Phase 4: Developer Experience (Week 4) - IN PROGRESS 🔄
+- [~] Add TypeScript definitions (example created for Game class)
+- [~] Improve test coverage (example created for room handlers)
+- [X] Add API documentation (complete socket API docs)
 - [ ] Create developer guide
 
 ---
