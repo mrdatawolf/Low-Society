@@ -1,5 +1,7 @@
 // Room management service
-import { Game, GAME_PHASES } from '../models/game.js';
+import { Game } from '../models/game.js';
+import { GAME_PHASES } from '../shared/constants/gamePhases.js';
+import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
 
 class RoomManager {
   constructor() {
@@ -7,7 +9,7 @@ class RoomManager {
     this.playerRooms = new Map(); // playerId -> roomCode
   }
 
-  // Generate a unique 4-character room code
+  // Generate a unique room code
   generateRoomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars like I, O, 0, 1
     let code;
@@ -15,7 +17,7 @@ class RoomManager {
 
     do {
       code = '';
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < GAME_CONFIG.room.codeLength; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       attempts++;
@@ -122,7 +124,7 @@ class RoomManager {
 
     // Check if room is full
     let removedAIPlayer = null;
-    if (game.players.length >= 5) {
+    if (game.players.length >= GAME_CONFIG.players.max) {
       // Room is full - check if there's an AI player to replace
       const aiPlayer = game.players.find(p => p.isAI);
       if (aiPlayer) {
@@ -131,7 +133,7 @@ class RoomManager {
         removedAIPlayer = aiPlayer.id;
         console.log(`${playerName} replacing AI player ${aiPlayer.name} in room ${roomCode}`);
       } else {
-        throw new Error('Room is full (max 5 players)');
+        throw new Error(`Room is full (max ${GAME_CONFIG.players.max} players)`);
       }
     }
 
@@ -158,14 +160,30 @@ class RoomManager {
 
     console.log(`Player ${playerId} left room ${roomCode}`);
 
-    // If room is empty, delete it
+    // If room is empty, delete it and clean up AI players
     if (game.players.length === 0) {
       this.rooms.delete(roomCode);
+      // Emit event for AI cleanup (will be handled by aiHandler)
+      this.emit('roomDeleted', roomCode);
       console.log(`Room ${roomCode} deleted (empty)`);
       return null;
     }
 
     return { roomCode, game };
+  }
+
+  // Add event emitter capability for room deletion notifications
+  emit(event, data) {
+    if (!this._listeners) this._listeners = {};
+    if (this._listeners[event]) {
+      this._listeners[event].forEach(callback => callback(data));
+    }
+  }
+
+  on(event, callback) {
+    if (!this._listeners) this._listeners = {};
+    if (!this._listeners[event]) this._listeners[event] = [];
+    this._listeners[event].push(callback);
   }
 
   // Get game by room code
@@ -193,19 +211,20 @@ class RoomManager {
     }));
   }
 
-  // Clean up stale rooms (rooms older than 4 hours)
+  // Clean up stale rooms
   cleanupStaleRooms() {
-    const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
+    const staleThreshold = Date.now() - (GAME_CONFIG.room.staleThresholdHours * 60 * 60 * 1000);
 
     this.rooms.forEach((game, roomCode) => {
-      if (game.createdAt < fourHoursAgo) {
+      if (game.createdAt < staleThreshold) {
         // Remove all players from tracking
         game.players.forEach(player => {
           this.playerRooms.delete(player.id);
         });
 
-        // Delete room
+        // Delete room and notify listeners (for AI cleanup)
         this.rooms.delete(roomCode);
+        this.emit('roomDeleted', roomCode);
         console.log(`Room ${roomCode} cleaned up (stale)`);
       }
     });
@@ -215,7 +234,7 @@ class RoomManager {
 // Singleton instance
 export const roomManager = new RoomManager();
 
-// Run cleanup every hour
+// Run cleanup periodically
 setInterval(() => {
   roomManager.cleanupStaleRooms();
-}, 60 * 60 * 1000);
+}, GAME_CONFIG.room.cleanupIntervalMs);

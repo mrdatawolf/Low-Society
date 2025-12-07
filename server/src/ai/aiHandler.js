@@ -2,13 +2,22 @@
 // This module integrates AI players with the game loop
 
 import { AIPlayer } from './AIPlayer.js';
-import { GAME_PHASES } from '../models/game.js';
+import { GAME_PHASES } from '../shared/constants/gamePhases.js';
+import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
+import { SOCKET_EVENTS } from '../shared/constants/socketEvents.js';
 
 /**
  * Store for active AI players by room
  * Format: { roomCode: { playerId: AIPlayer } }
  */
 const aiPlayersByRoom = new Map();
+
+/**
+ * Processing queue for AI turns by room
+ * Prevents race conditions when multiple AI turns happen quickly
+ * Format: { roomCode: Promise }
+ */
+const aiTurnQueue = new Map();
 
 /**
  * Register an AI player for a room
@@ -40,7 +49,14 @@ export function isAIPlayer(roomCode, playerId) {
  * Remove all AI players for a room (when room is deleted)
  */
 export function clearAIPlayers(roomCode) {
-  aiPlayersByRoom.delete(roomCode);
+  const roomAIs = aiPlayersByRoom.get(roomCode);
+  if (roomAIs) {
+    const count = roomAIs.size;
+    aiPlayersByRoom.delete(roomCode);
+    // Also clear any pending AI turn queue
+    aiTurnQueue.delete(roomCode);
+    console.log(`[AI] Cleaned up ${count} AI players from room ${roomCode}`);
+  }
 }
 
 /**
@@ -121,7 +137,7 @@ export async function handleAITurn(game, roomCode, io) {
       game.pass(aiPlayer.id);
 
       // Broadcast player_passed event (same as human player)
-      io.to(roomCode).emit('player_passed', {
+      io.to(roomCode).emit(SOCKET_EVENTS.PLAYER_PASSED, {
         publicState: game.getPublicState(),
         playerId: aiPlayer.id
       });
@@ -129,7 +145,7 @@ export async function handleAITurn(game, roomCode, io) {
       // Update all private states (money may have changed)
       game.players.forEach(player => {
         if (!isAIPlayer(roomCode, player.id)) {
-          io.to(player.id).emit('private_state_update', {
+          io.to(player.id).emit(SOCKET_EVENTS.PRIVATE_STATE_UPDATE, {
             privateState: game.getPrivateState(player.id)
           });
         }
@@ -138,14 +154,14 @@ export async function handleAITurn(game, roomCode, io) {
       const bidTotal = game.placeBid(aiPlayer.id, decision.cards);
 
       // Broadcast bid_placed event (same as human player)
-      io.to(roomCode).emit('bid_placed', {
+      io.to(roomCode).emit(SOCKET_EVENTS.BID_PLACED, {
         publicState: game.getPublicState(),
         playerId: aiPlayer.id,
         bidTotal
       });
 
       // Update AI player's private state (even though they won't see it)
-      io.to(aiPlayer.id).emit('private_state_update', {
+      io.to(aiPlayer.id).emit(SOCKET_EVENTS.PRIVATE_STATE_UPDATE, {
         privateState: game.getPrivateState(aiPlayer.id)
       });
     }
@@ -161,7 +177,7 @@ export async function handleAITurn(game, roomCode, io) {
     try {
       game.pass(aiPlayer.id);
       const updatedPublicState = game.getPublicState();
-      io.to(roomCode).emit('state_update', { publicState: updatedPublicState });
+      io.to(roomCode).emit(SOCKET_EVENTS.STATE_UPDATE, { publicState: updatedPublicState });
       return updatedPublicState;
     } catch (passError) {
       console.error(`[AI] Could not force pass:`, passError.message);
@@ -217,13 +233,13 @@ export async function handleAILuxuryDiscard(game, roomCode, io) {
 
     // Broadcast state update
     const updatedPublicState = game.getPublicState();
-    io.to(roomCode).emit('state_update', { publicState: updatedPublicState });
+    io.to(roomCode).emit(SOCKET_EVENTS.STATE_UPDATE, { publicState: updatedPublicState });
 
     // Send private states
     game.players.forEach(player => {
       if (!isAIPlayer(roomCode, player.id)) {
         const playerPrivateState = game.getPrivateState(player.id);
-        io.to(player.id).emit('private_state_update', {
+        io.to(player.id).emit(SOCKET_EVENTS.PRIVATE_STATE_UPDATE, {
           privateState: playerPrivateState
         });
       }
@@ -282,13 +298,13 @@ export async function handleAICardSwap(game, roomCode, io) {
 
     // Broadcast state update
     const updatedPublicState = game.getPublicState();
-    io.to(roomCode).emit('state_update', { publicState: updatedPublicState });
+    io.to(roomCode).emit(SOCKET_EVENTS.STATE_UPDATE, { publicState: updatedPublicState });
 
     // Send private states
     game.players.forEach(player => {
       if (!isAIPlayer(roomCode, player.id)) {
         const playerPrivateState = game.getPrivateState(player.id);
-        io.to(player.id).emit('private_state_update', {
+        io.to(player.id).emit(SOCKET_EVENTS.PRIVATE_STATE_UPDATE, {
           privateState: playerPrivateState
         });
       }
@@ -300,6 +316,30 @@ export async function handleAICardSwap(game, roomCode, io) {
     console.error(`[AI] Error handling AI card swap:`, error.message);
     return null;
   }
+}
+
+/**
+ * Queue an AI turn for processing
+ * Ensures AI turns are processed sequentially to prevent race conditions
+ * @param {Function} handler - The async function to execute
+ * @param {string} roomCode - The room code
+ * @returns {Promise} Promise that resolves when the handler completes
+ */
+async function queueAITurn(handler, roomCode) {
+  // Get or create the queue promise for this room
+  const currentQueue = aiTurnQueue.get(roomCode) || Promise.resolve();
+
+  // Chain the new handler onto the existing queue
+  const newQueue = currentQueue
+    .then(() => handler())
+    .catch((error) => {
+      console.error(`[AI] Error in queued AI turn for room ${roomCode}:`, error);
+    });
+
+  // Update the queue
+  aiTurnQueue.set(roomCode, newQueue);
+
+  return newQueue;
 }
 
 /**
@@ -317,8 +357,11 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
       if (game.currentAuction?.currentTurnPlayerId) {
         const isAI = isAIPlayer(roomCode, game.currentAuction.currentTurnPlayerId);
         if (isAI) {
-          // Small delay before processing to ensure state is settled
-          setTimeout(async () => {
+          // Queue the AI turn to prevent race conditions
+          queueAITurn(async () => {
+            // Small delay before processing to ensure state is settled
+            await new Promise(resolve => setTimeout(resolve, GAME_CONFIG.ai.turnProcessingDelay));
+
             try {
               const updatedState = await handleAITurn(game, roomCode, io);
               // Check if there's another AI turn to handle
@@ -328,7 +371,7 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
             } catch (error) {
               console.error('[AI] Error in checkAndHandleAITurn:', error);
             }
-          }, 100);
+          }, roomCode);
         }
       }
       break;
@@ -338,7 +381,9 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
       if (game.discardingPlayerId) {
         const isAI = isAIPlayer(roomCode, game.discardingPlayerId);
         if (isAI) {
-          setTimeout(async () => {
+          queueAITurn(async () => {
+            await new Promise(resolve => setTimeout(resolve, GAME_CONFIG.ai.turnProcessingDelay));
+
             try {
               const updatedState = await handleAILuxuryDiscard(game, roomCode, io);
               if (updatedState) {
@@ -347,7 +392,7 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
             } catch (error) {
               console.error('[AI] Error in handleAILuxuryDiscard:', error);
             }
-          }, 100);
+          }, roomCode);
         }
       }
       break;
@@ -357,7 +402,9 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
       if (game.currentAuction?.swapWinner) {
         const isAI = isAIPlayer(roomCode, game.currentAuction.swapWinner);
         if (isAI) {
-          setTimeout(async () => {
+          queueAITurn(async () => {
+            await new Promise(resolve => setTimeout(resolve, GAME_CONFIG.ai.turnProcessingDelay));
+
             try {
               const updatedState = await handleAICardSwap(game, roomCode, io);
               if (updatedState) {
@@ -366,7 +413,7 @@ export async function checkAndHandleAITurn(game, roomCode, io) {
             } catch (error) {
               console.error('[AI] Error in handleAICardSwap:', error);
             }
-          }, 100);
+          }, roomCode);
         }
       }
       break;
