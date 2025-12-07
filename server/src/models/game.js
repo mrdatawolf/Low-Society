@@ -1,4 +1,9 @@
-// Game state model
+/**
+ * Game State Model
+ * Manages the core game state and auction logic for Low Society
+ * @module models/game
+ */
+
 import { buildItemDeck, createMoneyHand, removeRandomBill, isGameEndingCard, calculateScore, CARD_TYPES } from './cards.js';
 import { GAME_PHASES } from '../shared/constants/gamePhases.js';
 import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
@@ -6,12 +11,26 @@ import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
 // Re-export for backwards compatibility
 export { GAME_PHASES };
 
+/**
+ * Auction type constants
+ * @enum {string}
+ */
 export const AUCTION_TYPES = {
-  STANDARD: 'standard',         // Bidding to win
-  REVERSE: 'reverse'            // Bidding to avoid
+  /** Standard bidding to win the card */
+  STANDARD: 'standard',
+  /** Reverse bidding to avoid the card */
+  REVERSE: 'reverse'
 };
 
+/**
+ * Game class representing a Low Society game instance
+ * @class
+ */
 export class Game {
+  /**
+   * Create a new game instance
+   * @param {string} roomCode - The unique room code for this game
+   */
   constructor(roomCode) {
     this.roomCode = roomCode;
     this.players = [];
@@ -26,7 +45,14 @@ export class Game {
     this.discardingPlayerId = null; // Track who needs to discard a luxury card
   }
 
-  // Add a player to the game
+  /**
+   * Add a player to the game
+   * @param {string} playerId - Unique identifier for the player (socket ID)
+   * @param {string} playerName - Display name for the player
+   * @param {boolean} [isAI=false] - Whether this player is AI-controlled
+   * @returns {Object} The created player object
+   * @throws {Error} If room is full or game already started
+   */
   addPlayer(playerId, playerName, isAI = false) {
     if (this.players.length >= GAME_CONFIG.players.max) {
       throw new Error(`Room is full (max ${GAME_CONFIG.players.max} players)`);
@@ -57,7 +83,10 @@ export class Game {
     return player;
   }
 
-  // Remove a player from the game
+  /**
+   * Remove a player from the game
+   * @param {string} playerId - ID of the player to remove
+   */
   removePlayer(playerId) {
     const index = this.players.findIndex(p => p.id === playerId);
     if (index !== -1) {
@@ -70,7 +99,11 @@ export class Game {
     }
   }
 
-  // Start the game
+  /**
+   * Start the game
+   * Initializes deck, removes random bills from players, and starts first auction
+   * @throws {Error} If not enough players to start
+   */
   startGame() {
     if (this.players.length < GAME_CONFIG.players.min) {
       throw new Error(`Need at least ${GAME_CONFIG.players.min} players to start`);
@@ -90,7 +123,11 @@ export class Game {
     this.startNextAuction();
   }
 
-  // Start the next auction
+  /**
+   * Start the next auction
+   * Draws next card from deck and initializes auction state
+   * Ends game if deck is empty
+   */
   startNextAuction() {
     // LOW SOCIETY RULE: Game ends when deck is empty (all 15 cards played)
     if (this.itemDeck.length === 0) {
@@ -173,7 +210,13 @@ export class Game {
     console.log(`Auction restarted for card: ${this.currentCard.name}`);
   }
 
-  // Place a bid
+  /**
+   * Place a bid in the current auction
+   * @param {string} playerId - ID of the player placing the bid
+   * @param {string[]} moneyCardIds - Array of money card IDs to bid
+   * @returns {number} The total value of the bid
+   * @throws {Error} If not player's turn, already passed, or bid invalid
+   */
   placeBid(playerId, moneyCardIds) {
     const player = this.players.find(p => p.id === playerId);
     if (!player) throw new Error('Player not found');
@@ -206,7 +249,11 @@ export class Game {
     return newBidTotal;
   }
 
-  // Player passes
+  /**
+   * Pass on the current auction
+   * @param {string} playerId - ID of the player passing
+   * @throws {Error} If not player's turn or already passed
+   */
   pass(playerId) {
     const player = this.players.find(p => p.id === playerId);
     if (!player) throw new Error('Player not found');
@@ -509,7 +556,10 @@ export class Game {
     return this.results;
   }
 
-  // Get public game state (what all players can see)
+  /**
+   * Get public game state (visible to all players)
+   * @returns {Object} Public state including phase, players, current card, auction info
+   */
   getPublicState() {
     return {
       roomCode: this.roomCode,
@@ -534,7 +584,11 @@ export class Game {
     };
   }
 
-  // Get private state for a specific player
+  /**
+   * Get private state for a specific player (only visible to that player)
+   * @param {string} playerId - ID of the player
+   * @returns {Object|null} Private state including money hand, current bid, or null if player not found
+   */
   getPrivateState(playerId) {
     const player = this.players.find(p => p.id === playerId);
     if (!player) return null;
