@@ -160,11 +160,18 @@ body {
   margin: 20px 0;
 }
 
-/* Lobby Screen */
+/* Lobby Screen - matches game screen layout */
 .lobby-screen {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.lobby-controls {
+  /* Lobby-specific controls shown in the money-hand area */
 }
 
 .lobby-header {
@@ -310,7 +317,11 @@ body {
   background: var(--bg-card);
   border-bottom: 3px solid var(--border-color);
   flex-shrink: 0;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   flex-wrap: wrap;
 }
 
@@ -395,7 +406,7 @@ body {
   grid-template-columns: 250px 1fr 320px;
   gap: 10px;
   padding: 10px;
-  padding-top: 100px;
+  padding-top: 140px;
   flex: 1;
   align-items: start;
   overflow-y: auto;

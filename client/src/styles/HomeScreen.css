@@ -161,7 +161,6 @@
   background: var(--bg-card);
   color: var(--text-primary);
   font-family: 'Arial', sans-serif;
-  text-transform: uppercase;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -305,6 +304,7 @@
   font-weight: bold;
   background: var(--bg-secondary);
   border-width: 4px;
+  text-transform: uppercase;
 }
 
 /* Responsive Adjustments */

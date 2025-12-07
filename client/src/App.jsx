@@ -93,10 +93,10 @@ function App() {
     }
   }, [gameState?.phase]);
 
-  const handleCreateRoom = async (playerName) => {
+  const handleCreateRoom = async (playerName, options = {}) => {
     try {
       setError('');
-      const response = await socketService.createRoom(playerName);
+      const response = await socketService.createRoom(playerName, options);
       setGameState(response.publicState);
       setPrivateState(response.privateState);
       setPhase(response.publicState.phase);
@@ -117,10 +117,10 @@ function App() {
     }
   };
 
-  const handleStartGame = async () => {
+  const handleStartGame = async (options = {}) => {
     try {
       setError('');
-      await socketService.startGame();
+      await socketService.startGame(options);
     } catch (err) {
       setError(err.message);
     }
@@ -220,11 +220,10 @@ function App() {
         phase === GAME_PHASES.AUCTION ||
         phase === GAME_PHASES.CARD_SWAP ||
         phase === GAME_PHASES.DISCARD_LUXURY) &&
-        gameState &&
-        privateState && (
+        gameState && (
         <GameScreen
           gameState={gameState}
-          privateState={privateState}
+          privateState={privateState || { moneyHand: [], removedBill: null }}
           myPlayerId={myPlayerId}
           onPlaceBid={handlePlaceBid}
           onPass={handlePass}

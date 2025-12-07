@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { roomManager } from './services/roomManager.js';
 import { GAME_PHASES } from './models/game.js';
+import { checkAndHandleAITurn, registerAIPlayer, removeAIPlayer } from './ai/aiHandler.js';
+import { createAIPlayer } from './ai/AIPlayer.js';
 
 // Input validation helpers
 function sanitizePlayerName(name) {
@@ -112,7 +114,7 @@ io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
   // Create a new room
-  socket.on('create_room', ({ playerName }, callback) => {
+  socket.on('create_room', ({ playerName, aiEnabled }, callback) => {
     try {
       const sanitizedName = sanitizePlayerName(playerName);
       const { roomCode, game } = roomManager.createRoom(socket.id, sanitizedName);
@@ -120,12 +122,40 @@ io.on('connection', (socket) => {
       // Join socket room
       socket.join(roomCode);
 
+      // Send initial response
       callback({
         success: true,
         roomCode,
         publicState: game.getPublicState(),
         privateState: game.getPrivateState(socket.id)
       });
+
+      // Auto-fill with AI players if enabled (default true)
+      const shouldFillAI = aiEnabled !== undefined ? aiEnabled : true;
+      if (shouldFillAI) {
+        const maxPlayers = 5;
+        const currentPlayerCount = game.players.length;
+        const aiPlayersNeeded = maxPlayers - currentPlayerCount;
+
+        if (aiPlayersNeeded > 0) {
+          console.log(`[AI] Auto-filling room ${roomCode} with ${aiPlayersNeeded} AI players`);
+
+          // Add AI players with staggered delays (250ms between each)
+          for (let i = 0; i < aiPlayersNeeded; i++) {
+            setTimeout(() => {
+              const aiPlayer = createAIPlayer(i);
+              game.addPlayer(aiPlayer.id, aiPlayer.name, true);
+              registerAIPlayer(roomCode, aiPlayer);
+              console.log(`[AI] Added ${aiPlayer.name} to room ${roomCode}`);
+
+              // Broadcast updated state to all players in room
+              io.to(roomCode).emit('state_update', {
+                publicState: game.getPublicState()
+              });
+            }, i * 250);
+          }
+        }
+      }
     } catch (error) {
       callback({ success: false, error: error.message });
     }
@@ -136,7 +166,12 @@ io.on('connection', (socket) => {
     try {
       const sanitizedCode = sanitizeRoomCode(roomCode);
       const sanitizedName = sanitizePlayerName(playerName);
-      const { game, roundWasReset } = roomManager.joinRoom(sanitizedCode, socket.id, sanitizedName);
+      const { game, roundWasReset, removedAIPlayer } = roomManager.joinRoom(sanitizedCode, socket.id, sanitizedName);
+
+      // If an AI player was removed to make room, clean up AI reference
+      if (removedAIPlayer) {
+        removeAIPlayer(sanitizedCode, removedAIPlayer);
+      }
 
       // Join socket room
       socket.join(sanitizedCode);
@@ -185,6 +220,52 @@ io.on('connection', (socket) => {
         throw new Error('Only the host can start the game');
       }
 
+      // Get AI enabled flag (default to true for backwards compatibility)
+      const aiEnabled = data.aiEnabled !== undefined ? data.aiEnabled : true;
+      const spectatorMode = data.spectatorMode || false;
+
+      // Auto-fill with AI players if needed and AI is enabled
+      const minPlayers = 3;
+      const maxPlayers = 5;
+      let currentPlayerCount = game.players.length;
+
+      // If spectator mode, remove ALL existing players and add 5 fresh AI players
+      if (spectatorMode) {
+        console.log(`[AI] Starting spectator mode - removing all players and adding 5 AI players`);
+
+        // Remove all existing players (human and AI)
+        const playersCopy = [...game.players];
+        playersCopy.forEach(player => {
+          game.removePlayer(player.id);
+          // Also remove from AI registry if it's an AI
+          if (player.isAI) {
+            removeAIPlayer(roomCode, player.id);
+          }
+          console.log(`[AI] Removed ${player.isAI ? 'AI' : 'human'} player ${player.name} for spectator mode`);
+        });
+
+        // Add 5 fresh AI players
+        for (let i = 0; i < 5; i++) {
+          const aiPlayer = createAIPlayer(i);
+          game.addPlayer(aiPlayer.id, aiPlayer.name, true); // true = isAI
+          registerAIPlayer(roomCode, aiPlayer);
+          console.log(`[AI] Added ${aiPlayer.name} (${aiPlayer.id}) for spectator mode`);
+        }
+      } else if (aiEnabled && currentPlayerCount < maxPlayers) {
+        // Fill to max players (5) when AI is enabled
+        const aiPlayersNeeded = maxPlayers - currentPlayerCount;
+        console.log(`[AI] Adding ${aiPlayersNeeded} AI players to fill room to ${maxPlayers}`);
+
+        for (let i = 0; i < aiPlayersNeeded; i++) {
+          const aiPlayer = createAIPlayer(i);
+          game.addPlayer(aiPlayer.id, aiPlayer.name, true); // true = isAI
+          registerAIPlayer(roomCode, aiPlayer);
+          console.log(`[AI] Added ${aiPlayer.name} (${aiPlayer.id}) to room ${roomCode}`);
+        }
+      } else if (!aiEnabled && currentPlayerCount < minPlayers) {
+        throw new Error('Need at least 3 players to start (AI players disabled)');
+      }
+
       game.startGame();
 
       // Notify all players
@@ -198,6 +279,9 @@ io.on('connection', (socket) => {
           privateState: game.getPrivateState(player.id)
         });
       });
+
+      // Check if first turn is an AI player
+      checkAndHandleAITurn(game, roomCode, io);
 
       callback({ success: true });
     } catch (error) {
@@ -227,6 +311,9 @@ io.on('connection', (socket) => {
       io.to(socket.id).emit('private_state_update', {
         privateState: game.getPrivateState(socket.id)
       });
+
+      // Check if next turn is an AI player
+      checkAndHandleAITurn(game, roomCode, io);
 
       callback({ success: true, bidTotal });
     } catch (error) {
@@ -258,6 +345,9 @@ io.on('connection', (socket) => {
         });
       });
 
+      // Check if next turn is an AI player (or if auction ended, check next phase)
+      checkAndHandleAITurn(game, roomCode, io);
+
       callback({ success: true });
     } catch (error) {
       callback({ success: false, error: error.message });
@@ -284,6 +374,9 @@ io.on('connection', (socket) => {
         card2Id
       });
 
+      // Check if next turn is an AI player
+      checkAndHandleAITurn(game, roomCode, io);
+
       callback({ success: true });
     } catch (error) {
       callback({ success: false, error: error.message });
@@ -307,6 +400,9 @@ io.on('connection', (socket) => {
         playerId: socket.id,
         cardId
       });
+
+      // Check if next turn is an AI player
+      checkAndHandleAITurn(game, roomCode, io);
 
       callback({ success: true });
     } catch (error) {

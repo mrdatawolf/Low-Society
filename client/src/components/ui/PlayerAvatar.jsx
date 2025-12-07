@@ -20,6 +20,7 @@ import '../../styles/PlayerAvatar.css';
  * @param {boolean} hasPassed - Whether player has passed
  * @param {boolean} isCurrentTurn - Whether it's this player's turn
  * @param {boolean} isCurrentPlayer - Whether this is the current user
+ * @param {boolean} isAI - Whether this is an AI player
  * @param {boolean} showName - Show name tag below avatar
  * @param {boolean} showStats - Show player stats (money, cards, bid)
  * @param {object} stats - Player stats { money, cards, bid }
@@ -35,6 +36,7 @@ export function PlayerAvatar({
   hasPassed = false,
   isCurrentTurn = false,
   isCurrentPlayer = false,
+  isAI = false,
   showName = true,
   showStats = false,
   stats = { money: 0, cards: 0, bid: 0 },
@@ -115,6 +117,9 @@ export function PlayerAvatar({
         {hasPassed && (
           <div className="status-badge passed-badge">✕</div>
         )}
+        {isAI && (
+          <div className="status-badge ai-badge">🤖</div>
+        )}
       </div>
 
       {/* Player name tag */}
@@ -122,6 +127,7 @@ export function PlayerAvatar({
         <div className="player-name-tag">
           {playerName}
           {isCurrentPlayer && <span className="you-badge">(You)</span>}
+          {isAI && <span className="ai-label">AI</span>}
         </div>
       )}
 

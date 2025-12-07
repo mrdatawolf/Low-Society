@@ -31,7 +31,7 @@ export class Game {
   }
 
   // Add a player to the game
-  addPlayer(playerId, playerName) {
+  addPlayer(playerId, playerName, isAI = false) {
     if (this.players.length >= 5) {
       throw new Error('Room is full (max 5 players)');
     }
@@ -43,6 +43,7 @@ export class Game {
     const player = {
       id: playerId,
       name: playerName,
+      isAI: isAI,
       moneyHand: createMoneyHand(),
       wonCards: [],
       currentBid: [],
@@ -521,6 +522,7 @@ export class Game {
       players: this.players.map(p => ({
         id: p.id,
         name: p.name,
+        isAI: p.isAI || false,
         remainingMoney: this.getPlayerMoneyTotal(p.id),
         wonCardsCount: p.wonCards.length,
         wonCards: p.wonCards, // All players can see won cards
