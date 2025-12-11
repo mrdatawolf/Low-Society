@@ -19,7 +19,9 @@
       "Bash(tasklist:*)",
       "Bash(npm pkg set:*)",
       "Bash(npm run build:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

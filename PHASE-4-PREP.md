@@ -326,7 +326,76 @@ socket.emit('create_room',
 
 ---
 
-### Task 6: Developer Guide (2-3 hours)
+### Task 6: Mobile/Small Screen UI Fixes (2-3 hours)
+
+#### Issues to Fix
+1. **Help button positioning** - Move to bottom left corner
+2. **Game header height** - Reduce from ~1/6th screen to 3em
+3. **Leave room button width** - Make 10% thinner
+4. **Orientation lock** - Force landscape mode on mobile devices
+5. **Additional issues** - Test and fix issues revealed by above changes
+
+#### Files to Modify
+- `client/src/styles/GameHeader.css` - Reduce header height
+- `client/src/styles/HelpButton.css` or component - Reposition to bottom left
+- `client/src/styles/RoomControls.css` or similar - Adjust leave button
+- `client/public/index.html` or `client/src/App.jsx` - Add viewport meta tags for orientation
+
+#### Implementation Notes
+```css
+/* GameHeader.css - Reduce height */
+.game-header {
+  height: 3em;  /* Changed from larger value */
+  min-height: 3em;
+}
+
+/* HelpButton positioning */
+.help-button {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1000;
+}
+
+/* Leave room button */
+.leave-room-button {
+  width: 90%;  /* 10% thinner than current */
+  max-width: 200px;  /* Add reasonable max */
+}
+```
+
+```html
+<!-- Force landscape orientation -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="screen-orientation" content="landscape">
+```
+
+```css
+/* CSS orientation lock (fallback) */
+@media screen and (orientation: portrait) {
+  body::before {
+    content: "Please rotate your device to landscape mode";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    font-size: 1.5rem;
+    text-align: center;
+    padding: 2rem;
+  }
+}
+```
+
+---
+
+### Task 7: Developer Guide (2-3 hours)
 
 #### Document to Create
 `docs/DEVELOPER-GUIDE.md`
@@ -426,22 +495,28 @@ socket.on('new_event', handleNewEvent(socket, roomManager, io));
 4. ✅ Write tests for gameHandlers
 5. ✅ Write tests for specialHandlers
 
-### Week 2: Additional Testing
+### Week 2: Additional Testing & Mobile UI
 6. ✅ Write AI handler tests
 7. ✅ Write error handler tests
-8. ✅ Fix any bugs found during testing
-9. ✅ Achieve 80%+ code coverage
+8. 🆕 Fix mobile/small screen UI issues
+   - Move help button to bottom left
+   - Reduce game header height to 3em
+   - Make leave room button 10% thinner
+   - Force landscape mode
+   - Test and fix revealed issues
+9. ✅ Fix any bugs found during testing
+10. ✅ Achieve 80%+ code coverage
 
 ### Week 3: TypeScript & Documentation
-10. ✅ Create TypeScript definition files
-11. ✅ Write socket API documentation
-12. ✅ Create developer guide
+11. ✅ Create TypeScript definition files
+12. ✅ Write socket API documentation
+13. ✅ Create developer guide
 
 ### Week 4: Polish & Review
-13. ✅ Add troubleshooting guide
-14. ✅ Create architecture diagrams
-15. ✅ Review and update all documentation
-16. ✅ Final testing and validation
+14. ✅ Add troubleshooting guide
+15. ✅ Create architecture diagrams
+16. ✅ Review and update all documentation
+17. ✅ Final testing and validation (including mobile)
 
 ---
 

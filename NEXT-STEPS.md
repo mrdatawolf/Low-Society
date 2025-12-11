@@ -393,6 +393,12 @@ const updatedPlayer = {
 - [~] Add TypeScript definitions (example created for Game class)
 - [~] Improve test coverage (example created for room handlers)
 - [X] Add API documentation (complete socket API docs)
+- [ ] Fix mobile/small screen UI issues
+  - [ ] Move help button to bottom left
+  - [ ] Reduce game header height to 3em
+  - [ ] Make leave room button 10% thinner
+  - [ ] Force landscape mode on mobile
+  - [ ] Test and fix additional issues
 - [ ] Create developer guide
 
 ---
