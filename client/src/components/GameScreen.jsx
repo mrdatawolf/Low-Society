@@ -4,11 +4,13 @@ import { Card } from './ui/Card';
 import { MoneyHand } from './ui/FoodStampBills';
 import { PawnShopTradeOverlay, RepoManOverlay } from './ui/PhaseOverlay';
 import { GameHistory } from './ui/GameHistory';
+import { ChatBubble } from './ui/ChatBubble';
+import { soundEffects } from '../services/soundEffects';
 import '../styles/FoodStampBills.css';
 import '../styles/PhaseOverlay.css';
 import '../styles/GameHistory.css';
 
-export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom, roundReset, gameDisconnected }) {
+export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, onPass, onExecuteCardSwap, onDiscardLuxuryCard, onLeaveRoom, roundReset, gameDisconnected, chatMessage, onClearChatMessage }) {
   const [selectedMoney, setSelectedMoney] = useState([]);
   const [selectedSwapCards, setSelectedSwapCards] = useState([]);
   const [selectedDiscardCard, setSelectedDiscardCard] = useState(null);
@@ -556,6 +558,47 @@ export function GameScreen({ gameState, privateState, myPlayerId, onPlaceBid, on
         visible={isDiscardLuxuryPhase}
         playerName={gameState.players.find(p => p.id === gameState.discardingPlayerId)?.name || 'Player'}
       />
+
+      {/* Chat bubble */}
+      {chatMessage && (() => {
+        // Calculate the seat position of the speaking player
+        const getSeatPosition = (playerId) => {
+          const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+          const currentPlayerIndex = gameState.players.findIndex(p => p.id === myPlayerId);
+
+          if (playerIndex === -1 || currentPlayerIndex === -1) return 'seat-bottom';
+
+          // Calculate relative position (rotate so current player is at index 0)
+          const relativeIndex = (playerIndex - currentPlayerIndex + gameState.players.length) % gameState.players.length;
+          const totalPlayers = gameState.players.length;
+
+          // Map relative index to seat position based on player count
+          const positionMaps = {
+            3: ['seat-bottom', 'seat-top-left', 'seat-top-right'],
+            4: ['seat-bottom', 'seat-left', 'seat-top', 'seat-right'],
+            5: ['seat-bottom', 'seat-left', 'seat-top-left', 'seat-top-right', 'seat-right']
+          };
+
+          return positionMaps[totalPlayers]?.[relativeIndex] || 'seat-bottom';
+        };
+
+        const playerPosition = getSeatPosition(chatMessage.playerId);
+
+        return (
+          <div className="chat-bubble-container">
+            <ChatBubble
+              key={chatMessage.timestamp}
+              playerId={chatMessage.playerId}
+              playerName={chatMessage.playerName}
+              message={chatMessage.message}
+              duration={chatMessage.duration}
+              mode={chatMessage.mode}
+              playerPosition={playerPosition}
+              onComplete={onClearChatMessage}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -11,16 +11,33 @@ export function LobbyScreen({ gameState, isHost, onStartGame, onLeaveRoom }) {
     return saved !== null ? JSON.parse(saved) : true;
   });
 
+  // Load tutorial mode preference from localStorage, default to false
+  const [tutorialMode, setTutorialMode] = useState(() => {
+    const saved = localStorage.getItem('lowsociety_tutorial_mode');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+
   // Save AI preference to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('lowsociety_ai_enabled', JSON.stringify(aiEnabled));
   }, [aiEnabled]);
 
+  // Save tutorial mode preference to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('lowsociety_tutorial_mode', JSON.stringify(tutorialMode));
+  }, [tutorialMode]);
+
   const handleStartGame = () => {
+    // Set chat mode on server before starting
+    const chatMode = tutorialMode ? 'tutorial' : 'commentary';
+    socketService.emit('set_chat_mode', { mode: chatMode });
     onStartGame({ aiEnabled });
   };
 
   const handleWatchAIGame = () => {
+    // Set chat mode on server before starting
+    const chatMode = tutorialMode ? 'tutorial' : 'commentary';
+    socketService.emit('set_chat_mode', { mode: chatMode });
     // Start an all-AI game where player is spectator
     onStartGame({ aiEnabled: true, spectatorMode: true });
   };
@@ -131,6 +148,43 @@ export function LobbyScreen({ gameState, isHost, onStartGame, onLeaveRoom }) {
                     </span>
                   </span>
                   <span style={{ fontSize: '1.5rem' }}>🤖</span>
+                </label>
+              </div>
+            )}
+
+            {isHost && (
+              <div className="tutorial-mode-section" style={{
+                marginBottom: '20px',
+                padding: '15px',
+                background: 'var(--bg-card)',
+                borderRadius: '12px',
+                border: '2px solid var(--border-color)'
+              }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={tutorialMode}
+                    onChange={(e) => setTutorialMode(e.target.checked)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <span style={{ flex: 1 }}>
+                    <strong>Tutorial Mode</strong>
+                    <br />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      AI explains their moves and strategy. Turns off in-game commentary.
+                    </span>
+                  </span>
+                  <span style={{ fontSize: '1.5rem' }}>📚</span>
                 </label>
               </div>
             )}

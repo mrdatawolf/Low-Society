@@ -5,6 +5,9 @@ import { AIPlayer } from './AIPlayer.js';
 import { GAME_PHASES } from '../shared/constants/gamePhases.js';
 import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
 import { SOCKET_EVENTS } from '../shared/constants/socketEvents.js';
+import { calculateChatDelay, secondsToMs, CHAT_MODES } from '../shared/constants/chatConfig.js';
+import { getTutorialMessage } from './tutorialMessages.js';
+import { getCommentaryMessage, getStory, getJoke, determineMessageType } from './commentaryMessages.js';
 
 /**
  * Store for active AI players by room
@@ -71,6 +74,167 @@ export function removeAIPlayer(roomCode, playerId) {
 }
 
 /**
+ * Generate and emit a chat message for an AI player
+ * @param {Object} game - The game instance
+ * @param {string} roomCode - The room code
+ * @param {Object} io - Socket.io server instance
+ * @param {Object} aiPlayer - The AI player instance
+ * @param {string} action - The action being taken ('BID', 'PASS', etc.)
+ * @param {Object} context - Context about the action
+ * @returns {Promise<number>} Delay in milliseconds
+ */
+async function generateAIChatMessage(game, roomCode, io, aiPlayer, action, context) {
+  let message = null;
+
+  // Generate message based on chat mode
+  if (game.chatMode === CHAT_MODES.TUTORIAL) {
+    message = getTutorialMessage(action, context);
+  } else if (game.chatMode === CHAT_MODES.COMMENTARY) {
+    // Determine what type of commentary to use
+    const messageType = determineMessageType(game.phase, {
+      lastEvent: action,
+      context
+    });
+
+    if (messageType.type === 'EVENT_COMMENTARY') {
+      message = getCommentaryMessage(action, context);
+    } else if (messageType.type === 'STORY') {
+      message = getStory();
+    } else if (messageType.type === 'JOKE') {
+      message = getJoke();
+    }
+
+    // Sometimes AI doesn't chat (30% silence in commentary mode)
+    if (Math.random() < 0.3) {
+      message = null;
+    }
+  }
+
+  // If no message generated, return immediately
+  if (!message) {
+    return 0;
+  }
+
+  // Calculate delay based on message length
+  const delaySeconds = calculateChatDelay(message);
+  const delayMs = secondsToMs(delaySeconds);
+
+  // Add message to game history
+  game.addChatMessage({
+    playerId: aiPlayer.id,
+    playerName: aiPlayer.name,
+    message,
+    mode: game.chatMode
+  });
+
+  // Emit chat message to all players
+  io.to(roomCode).emit(SOCKET_EVENTS.AI_CHAT_MESSAGE, {
+    playerId: aiPlayer.id,
+    playerName: aiPlayer.name,
+    message,
+    duration: delaySeconds,
+    mode: game.chatMode
+  });
+
+  console.log(`[AI Chat] ${aiPlayer.name}: "${message}" (${delaySeconds.toFixed(2)}s)`);
+
+  // Wait for the message to be displayed
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  return delayMs;
+}
+
+/**
+ * Generate story-based chat for eliminated players
+ * Handles interactive storytelling between eliminated AI players
+ */
+async function generateStoryChat(game, roomCode, io) {
+  // Only run in commentary mode
+  if (game.chatMode !== CHAT_MODES.COMMENTARY) {
+    return 0;
+  }
+
+  // Get eliminated players (those who have hasPassed = true and are out of the auction)
+  const eliminatedPlayers = game.players.filter(p => p.hasPassed && p.ai);
+
+  // Need at least 2 eliminated players for storytelling
+  if (eliminatedPlayers.length < 2) {
+    return 0;
+  }
+
+  const storySystem = game.storySystem;
+
+  // Start a new story if needed
+  if (storySystem.shouldStartStory(eliminatedPlayers)) {
+    storySystem.startStory(eliminatedPlayers);
+  }
+
+  // If no active story, nothing to do
+  if (!storySystem.hasActiveStory()) {
+    return 0;
+  }
+
+  let message = null;
+  let chatPlayer = null;
+
+  // Check if storyteller is eliminated (can continue the story)
+  const activePlayers = game.players.filter(p => !p.hasPassed || !p.ai);
+  const isStorytellerEliminated = storySystem.isStorytellerEliminated(activePlayers);
+
+  if (isStorytellerEliminated) {
+    // Storyteller continues the story
+    const storyteller = game.players.find(p => p.id === storySystem.storytellerId);
+    if (storyteller) {
+      message = storySystem.getNextStoryPart(storyteller);
+      chatPlayer = storyteller;
+    }
+  } else {
+    // Someone else reacts to the story (50% chance)
+    if (Math.random() < 0.5) {
+      const storyteller = game.players.find(p => p.id === storySystem.storytellerId);
+      const reaction = storySystem.getReaction(eliminatedPlayers, storyteller?.name || 'them');
+      if (reaction) {
+        message = reaction.message;
+        chatPlayer = reaction.reactor;
+      }
+    }
+  }
+
+  // If no message generated, return immediately
+  if (!message || !chatPlayer) {
+    return 0;
+  }
+
+  // Calculate delay based on message length
+  const delaySeconds = calculateChatDelay(message);
+  const delayMs = secondsToMs(delaySeconds);
+
+  // Add message to game history
+  game.addChatMessage({
+    playerId: chatPlayer.id,
+    playerName: chatPlayer.name,
+    message,
+    mode: game.chatMode
+  });
+
+  // Emit chat message to all players
+  io.to(roomCode).emit(SOCKET_EVENTS.AI_CHAT_MESSAGE, {
+    playerId: chatPlayer.id,
+    playerName: chatPlayer.name,
+    message,
+    duration: delaySeconds,
+    mode: game.chatMode
+  });
+
+  console.log(`[Story] ${chatPlayer.name}: "${message}" (${delaySeconds.toFixed(2)}s)`);
+
+  // Wait for the message to be displayed
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  return delayMs;
+}
+
+/**
  * Get count of AI players in a room
  */
 export function getAIPlayerCount(roomCode) {
@@ -97,6 +261,10 @@ export function getRandomAIPlayer(roomCode) {
  * @returns {Promise<Object>} The updated public state
  */
 export async function handleAITurn(game, roomCode, io) {
+  // First, check if eliminated players want to chat/tell stories
+  // This happens BEFORE the active player's turn
+  await generateStoryChat(game, roomCode, io);
+
   const currentPlayerId = game.currentAuction?.currentTurnPlayerId;
 
   if (!currentPlayerId) {
@@ -131,6 +299,17 @@ export async function handleAITurn(game, roomCode, io) {
 
     console.log(`[AI] ${aiPlayer.name} decided to ${decision.action}`,
                 decision.cards ? `with cards: ${decision.cards}` : '');
+
+    // Generate and emit chat message BEFORE taking action
+    // This includes waiting for the message display duration
+    const chatContext = {
+      bidAmount: decision.action === 'bid' ? game.calculatePlayerBidTotal(aiPlayer.id, decision.cards) : 0,
+      cardName: game.currentCard?.name,
+      cardType: game.currentCard?.type,
+      cardValue: game.currentCard?.value,
+      reasoning: `based on the current situation`
+    };
+    await generateAIChatMessage(game, roomCode, io, aiPlayer, decision.action.toUpperCase(), chatContext);
 
     // Execute action and broadcast exactly like human players would
     if (decision.action === 'pass') {

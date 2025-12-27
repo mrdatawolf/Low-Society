@@ -23,3 +23,7 @@ export {
   handleExecuteCardSwap,
   handleDiscardLuxuryCard
 } from './specialHandlers.js';
+
+export {
+  handleSetChatMode
+} from './chatHandlers.js';

@@ -1,0 +1,311 @@
+/* ==========================================
+   Chat Bubble Styles
+   ========================================== */
+
+.chat-bubble-container {
+  position: fixed;
+  top: 120px; /* Below game header */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  pointer-events: none;
+  width: 400px;
+  max-width: 90vw;
+}
+
+.chat-bubble {
+  background: var(--bg-card);
+  border: 3px solid var(--accent-primary);
+  border-radius: 15px;
+  padding: 15px 20px;
+  max-width: 300px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  position: relative;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.chat-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chat-bubble.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Speech bubble arrow base */
+.chat-bubble-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* Arrow pointing down (seat-bottom) */
+.chat-bubble-arrow.arrow-down {
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-down::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: -9px;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid var(--bg-card);
+}
+
+/* Arrow pointing left (seat-left) */
+.chat-bubble-arrow.arrow-left {
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-right: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-left::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: -9px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-right: 9px solid var(--bg-card);
+}
+
+/* Arrow pointing right (seat-right) */
+.chat-bubble-arrow.arrow-right {
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-right::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: -9px;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 9px solid var(--bg-card);
+}
+
+/* Arrow pointing top (seat-top) */
+.chat-bubble-arrow.arrow-top {
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-top::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: -9px;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid var(--bg-card);
+}
+
+/* Arrow pointing top-left (seat-top-left) */
+.chat-bubble-arrow.arrow-top-left {
+  top: -12px;
+  left: 20%;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-top-left::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: -9px;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid var(--bg-card);
+}
+
+/* Arrow pointing top-right (seat-top-right) */
+.chat-bubble-arrow.arrow-top-right {
+  top: -12px;
+  right: 20%;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid var(--accent-primary);
+}
+
+.chat-bubble-arrow.arrow-top-right::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: -9px;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid var(--bg-card);
+}
+
+/* Header with player name */
+.chat-bubble-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.chat-bubble-player-name {
+  font-weight: bold;
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.chat-bubble-mode-badge {
+  font-size: 0.8rem;
+  background: var(--accent-primary);
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: #000;
+}
+
+/* Message content */
+.chat-bubble-message {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* Tutorial mode styling */
+.chat-bubble.tutorial {
+  border-color: #4a7c4e;
+  background: rgba(74, 124, 78, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.chat-bubble.tutorial .chat-bubble-arrow {
+  border-top-color: #4a7c4e;
+}
+
+.chat-bubble.tutorial .chat-bubble-player-name {
+  color: #4a7c4e;
+}
+
+/* Commentary mode styling (default gold theme) */
+.chat-bubble.commentary {
+  border-color: var(--accent-primary);
+}
+
+/* Animation for bubble pop-in effect */
+@keyframes bubble-pop-in {
+  0% {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.chat-bubble.visible {
+  animation: bubble-pop-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Skip chat button */
+.skip-chat-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: var(--accent-primary);
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.skip-chat-btn:hover {
+  background: var(--accent-secondary);
+  transform: scale(1.05);
+}
+
+.skip-chat-btn:active {
+  transform: scale(0.95);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .chat-bubble-container {
+    top: 80px; /* Closer to header on mobile */
+    width: 300px;
+  }
+
+  .chat-bubble {
+    max-width: 250px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .chat-bubble-player-name {
+    font-size: 0.85rem;
+  }
+
+  .chat-bubble-message {
+    font-size: 13px;
+  }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .chat-bubble {
+    max-width: 200px;
+    padding: 10px 14px;
+  }
+
+  .chat-bubble-message {
+    font-size: 12px;
+  }
+}
+
+/* Accessibility - reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble {
+    transition: opacity 0.2s ease;
+    animation: none;
+  }
+
+  .chat-bubble.visible {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

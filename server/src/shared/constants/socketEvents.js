@@ -41,7 +41,12 @@ export const SOCKET_EVENTS = {
 
   // Special events
   ROUND_RESET: 'round_reset',
-  ERROR: 'error'
+  ERROR: 'error',
+
+  // Chat events
+  AI_CHAT_MESSAGE: 'ai_chat_message',
+  SET_CHAT_MODE: 'set_chat_mode',
+  CHAT_MODE_CHANGED: 'chat_mode_changed'
 };
 
 // Helper to validate event names (useful for debugging)
