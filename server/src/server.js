@@ -19,7 +19,8 @@ import {
   handlePlaceBid,
   handlePass,
   handleExecuteCardSwap,
-  handleDiscardLuxuryCard
+  handleDiscardLuxuryCard,
+  handleSetChatMode
 } from './handlers/index.js';
 
 // Set up AI cleanup when rooms are deleted
@@ -120,6 +121,9 @@ io.on('connection', (socket) => {
   // Special card effect handlers
   socket.on('execute_card_swap', handleExecuteCardSwap(socket, roomManager, io));
   socket.on('discard_luxury_card', handleDiscardLuxuryCard(socket, roomManager, io));
+
+  // Chat handlers
+  socket.on('set_chat_mode', handleSetChatMode(socket, roomManager, io));
 
   // Disconnection handler
   socket.on('disconnect', handleDisconnect(socket, roomManager, io, GAME_PHASES));

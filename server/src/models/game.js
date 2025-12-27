@@ -7,6 +7,8 @@
 import { buildItemDeck, createMoneyHand, removeRandomBill, isGameEndingCard, calculateScore, CARD_TYPES } from './cards.js';
 import { GAME_PHASES } from '../shared/constants/gamePhases.js';
 import { GAME_CONFIG } from '../shared/constants/gameConfig.js';
+import { CHAT_MODES } from '../shared/constants/chatConfig.js';
+import { StorySystem } from '../ai/storySystem.js';
 
 // Re-export for backwards compatibility
 export { GAME_PHASES };
@@ -43,6 +45,9 @@ export class Game {
     this.results = null;
     this.nextStartingPlayerId = null; // Track who starts the next auction
     this.discardingPlayerId = null; // Track who needs to discard a luxury card
+    this.chatMode = CHAT_MODES.COMMENTARY; // 'tutorial' or 'commentary'
+    this.chatHistory = []; // Recent chat messages for context
+    this.storySystem = new StorySystem(); // Interactive storytelling for eliminated players
   }
 
   /**
@@ -557,6 +562,36 @@ export class Game {
   }
 
   /**
+   * Set the chat mode for the game
+   * @param {string} mode - 'tutorial' or 'commentary'
+   * @returns {boolean} True if mode was set successfully
+   */
+  setChatMode(mode) {
+    if (mode !== CHAT_MODES.TUTORIAL && mode !== CHAT_MODES.COMMENTARY) {
+      return false;
+    }
+    this.chatMode = mode;
+    // Clear chat history when switching modes
+    this.chatHistory = [];
+    return true;
+  }
+
+  /**
+   * Add a message to chat history
+   * @param {Object} message - Chat message object
+   */
+  addChatMessage(message) {
+    this.chatHistory.push({
+      ...message,
+      timestamp: Date.now()
+    });
+    // Keep only last 20 messages
+    if (this.chatHistory.length > 20) {
+      this.chatHistory = this.chatHistory.slice(-20);
+    }
+  }
+
+  /**
    * Get public game state (visible to all players)
    * @returns {Object} Public state including phase, players, current card, auction info
    */
@@ -580,7 +615,8 @@ export class Game {
       cardsRemaining: this.itemDeck.length, // How many cards left in deck
       host: this.host,
       results: this.results,
-      discardingPlayerId: this.discardingPlayerId
+      discardingPlayerId: this.discardingPlayerId,
+      chatMode: this.chatMode
     };
   }
 

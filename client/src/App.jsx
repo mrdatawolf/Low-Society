@@ -25,6 +25,7 @@ function App() {
   const [showRules, setShowRules] = useState(false);
   const [roundReset, setRoundReset] = useState(null);
   const [gameDisconnected, setGameDisconnected] = useState(false);
+  const [currentChatMessage, setCurrentChatMessage] = useState(null);
 
   useEffect(() => {
     // Connect to server
@@ -77,6 +78,17 @@ function App() {
       setRoundReset({ playerName, timestamp: Date.now() });
       // Clear disconnected state when round resets (player rejoined)
       setGameDisconnected(false);
+    });
+
+    socketService.on('ai_chat_message', ({ playerId, playerName, message, duration, mode }) => {
+      setCurrentChatMessage({
+        playerId,
+        playerName,
+        message,
+        duration,
+        mode,
+        timestamp: Date.now()
+      });
     });
 
     // Clean up on unmount
@@ -232,6 +244,8 @@ function App() {
           onLeaveRoom={handleLeaveRoom}
           roundReset={roundReset}
           gameDisconnected={gameDisconnected}
+          chatMessage={currentChatMessage}
+          onClearChatMessage={() => setCurrentChatMessage(null)}
         />
       )}
 

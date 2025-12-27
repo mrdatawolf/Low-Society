@@ -377,6 +377,47 @@ body {
   padding: 8px 15px;
 }
 
+/* Chat mode toggle */
+.chat-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tutorial-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.tutorial-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+}
+
+.tutorial-checkbox input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.host-only {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .game-info {
   display: flex;
   gap: 25px;
