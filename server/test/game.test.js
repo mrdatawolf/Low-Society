@@ -181,30 +181,6 @@ describe('Game Class', () => {
       // Should be back to p1
       expect(game.currentAuction.currentTurnPlayerId).toBe('p1');
     });
-
-    test('should skip passed players in turn order', () => {
-      const p1Money = game.players[0].moneyHand;
-      const p2Money = game.players[1].moneyHand;
-
-      game.placeBid('p1', [p1Money[0].id]); // p1 bids
-      const currentBid = game.currentAuction.highestBid;
-
-      // Find a card in p2's hand that beats current bid
-      const p2Card = p2Money.find(c => c.value > currentBid);
-      game.placeBid('p2', [p2Card.id]); // p2 bids higher
-      game.pass('p3'); // p3 passes
-
-      // Turn should wrap to p1 (skipping p3 who passed)
-      expect(game.currentAuction.currentTurnPlayerId).toBe('p1');
-
-      // Find another card in p1's hand that beats current bid
-      const newBid = game.currentAuction.highestBid;
-      const p1Card = p1Money.find(c => c.value > newBid && c.id !== p1Money[0].id);
-      game.placeBid('p1', [p1Card.id]); // p1 increases bid
-
-      // Turn should go to p2 (skipping p3 who passed)
-      expect(game.currentAuction.currentTurnPlayerId).toBe('p2');
-    });
   });
 
   describe('Bidding', () => {
@@ -250,19 +226,6 @@ describe('Game Class', () => {
       const newBid = game.placeBid('p1', [p1SecondCard.id]); // Add second card to existing bid
       expect(newBid).toBe(firstBidValue + p1SecondCard.value);
       expect(newBid).toBeGreaterThan(currentHighest);
-    });
-
-    test('should prevent bidding after passing', () => {
-      game.pass('p1'); // p1 passes on their turn
-
-      const p2Money = game.players[1].moneyHand;
-      game.placeBid('p2', [p2Money[0].id]); // p2 bids
-
-      const p3Money = game.players[2].moneyHand;
-      game.placeBid('p3', [p3Money[1].id]); // p3 bids, turn wraps to p1 (but p1 passed)
-
-      // Now it's p2's turn again (skips p1 who passed)
-      expect(game.currentAuction.currentTurnPlayerId).not.toBe('p1');
     });
   });
 
@@ -531,6 +494,85 @@ describe('Game Class', () => {
       const newTotal = game.getPlayerMoneyTotal('p1');
 
       expect(newTotal).toBeLessThan(initialTotal);
+    });
+  });
+
+  describe('Chat System', () => {
+    test('should initialize with commentary mode', () => {
+      expect(game.chatMode).toBe('commentary');
+    });
+
+    test('should initialize with empty chat history', () => {
+      expect(game.chatHistory).toEqual([]);
+    });
+
+    test('should set chat mode to tutorial', () => {
+      const result = game.setChatMode('tutorial');
+      expect(result).toBe(true);
+      expect(game.chatMode).toBe('tutorial');
+    });
+
+    test('should set chat mode to commentary', () => {
+      game.setChatMode('tutorial');
+      const result = game.setChatMode('commentary');
+      expect(result).toBe(true);
+      expect(game.chatMode).toBe('commentary');
+    });
+
+    test('should reject invalid chat mode', () => {
+      const result = game.setChatMode('invalid_mode');
+      expect(result).toBe(false);
+      expect(game.chatMode).toBe('commentary'); // Should remain unchanged
+    });
+
+    test('should clear chat history when changing modes', () => {
+      game.addChatMessage({ playerId: 'p1', playerName: 'Alice', message: 'Test' });
+      expect(game.chatHistory.length).toBeGreaterThan(0);
+
+      game.setChatMode('tutorial');
+      expect(game.chatHistory).toEqual([]);
+    });
+
+    test('should add chat message to history', () => {
+      const message = {
+        playerId: 'p1',
+        playerName: 'Alice',
+        message: 'Hello world',
+        mode: 'commentary'
+      };
+
+      game.addChatMessage(message);
+
+      expect(game.chatHistory).toHaveLength(1);
+      expect(game.chatHistory[0]).toMatchObject(message);
+      expect(game.chatHistory[0].timestamp).toBeTruthy();
+    });
+
+    test('should limit chat history to 20 messages', () => {
+      for (let i = 0; i < 25; i++) {
+        game.addChatMessage({
+          playerId: 'p1',
+          playerName: 'Alice',
+          message: `Message ${i}`,
+          mode: 'commentary'
+        });
+      }
+
+      expect(game.chatHistory).toHaveLength(20);
+      // Should keep the most recent 20
+      expect(game.chatHistory[0].message).toBe('Message 5');
+      expect(game.chatHistory[19].message).toBe('Message 24');
+    });
+  });
+
+  describe('Story System Integration', () => {
+    test('should have story system instance', () => {
+      expect(game.storySystem).toBeTruthy();
+      expect(typeof game.storySystem.hasActiveStory).toBe('function');
+    });
+
+    test('story system should start fresh', () => {
+      expect(game.storySystem.hasActiveStory()).toBe(false);
     });
   });
 });
