@@ -315,14 +315,15 @@ describe('AIPlayer', () => {
       expect(delay).toBeInstanceOf(Promise);
     });
 
-    test('should delay for at least 500ms', async () => {
+    test('should delay within configured range', async () => {
       const startTime = Date.now();
       await aiPlayer.getThinkingDelay();
       const endTime = Date.now();
       const elapsed = endTime - startTime;
 
-      expect(elapsed).toBeGreaterThanOrEqual(490); // Allow small margin
-      expect(elapsed).toBeLessThanOrEqual(1600); // Max delay + margin
+      // Current AI config: min 1000ms, max 5000ms
+      expect(elapsed).toBeGreaterThanOrEqual(950); // Allow small margin
+      expect(elapsed).toBeLessThanOrEqual(5100); // Max delay + margin
     });
   });
 
@@ -370,10 +371,10 @@ describe('AI Player Factory Functions', () => {
   test('createAIPlayer should cycle through names', () => {
     const aiPlayer1 = createAIPlayer(0);
     const aiPlayer2 = createAIPlayer(1);
-    const aiPlayer3 = createAIPlayer(5); // Should wrap around
+    const aiPlayer3 = createAIPlayer(AI_NAMES.length); // Should wrap around
 
     expect(aiPlayer1.name).toBe(AI_NAMES[0]);
     expect(aiPlayer2.name).toBe(AI_NAMES[1]);
-    expect(aiPlayer3.name).toBe(AI_NAMES[0]); // 5 % 5 = 0
+    expect(aiPlayer3.name).toBe(AI_NAMES[0]); // wraps around to first name
   });
 });
